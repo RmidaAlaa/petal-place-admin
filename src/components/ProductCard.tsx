@@ -14,6 +14,7 @@ interface ProductCardProps {
   reviewCount: number;
   category: string;
   isNew?: boolean;
+  description?: string;
 }
 
 const ProductCard = ({
@@ -26,6 +27,7 @@ const ProductCard = ({
   reviewCount,
   category,
   isNew = false,
+  description,
 }: ProductCardProps) => {
   return (
     <Card className="group overflow-hidden bg-card hover:shadow-lg transition-all duration-300 border-border/50">
@@ -67,10 +69,14 @@ const ProductCard = ({
             <span className="text-sm text-muted-foreground">({reviewCount} reviews)</span>
           </div>
 
+          {description && (
+            <p className="text-xs text-muted-foreground mb-2">{description}</p>
+          )}
+
           <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-primary">${price}</span>
+            <span className="text-lg font-bold text-primary">{price} SAR</span>
             {originalPrice && (
-              <span className="text-sm text-muted-foreground line-through">${originalPrice}</span>
+              <span className="text-sm text-muted-foreground line-through">{originalPrice} SAR</span>
             )}
           </div>
         </div>

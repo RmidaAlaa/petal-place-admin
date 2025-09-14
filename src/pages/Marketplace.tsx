@@ -13,76 +13,77 @@ const Marketplace = () => {
   const featuredProducts = [
     {
       id: "1",
-      name: "Spring Rose Bouquet",
-      price: 89.99,
-      originalPrice: 109.99,
+      name: "Natural Roses (جوري)",
+      price: 8.00,
       image: rosesBouquet,
-      vendor: "Rose Garden Co.",
-      rating: 4.8,
-      reviewCount: 124,
-      category: "Roses",
+      vendor: "Roses Garden",
+      rating: 4.9,
+      reviewCount: 234,
+      category: "Natural Roses",
       isNew: true,
+      description: "Available in Red, White, Pink, Fuchsia, Purple, Yellow, Orange"
     },
     {
       id: "2",
-      name: "Elegant White Peonies",
-      price: 124.50,
+      name: "Baby Roses (بيبي جوري)",
+      price: 12.00,
       image: whitePeonies,
-      vendor: "Bloom & Blossom",
-      rating: 4.9,
-      reviewCount: 89,
-      category: "Peonies",
+      vendor: "Roses Garden",
+      rating: 4.8,
+      reviewCount: 189,
+      category: "Natural Roses",
+      description: "Available in Red, White, Pink, Fuchsia, Purple, Yellow, Orange"
     },
     {
       id: "3",
-      name: "Mixed Wildflower Bouquet",
-      price: 67.00,
+      name: "Lily Arrangement (زنبق)",
+      price: 17.00,
       image: springWildflowers,
-      vendor: "Meadow Fresh",
+      vendor: "Roses Garden",
       rating: 4.7,
       reviewCount: 156,
-      category: "Mixed",
+      category: "Premium Flowers",
       isNew: true,
     },
     {
       id: "4",
-      name: "Premium Rose Collection",
-      price: 149.99,
-      originalPrice: 179.99,
+      name: "Happiness Gift Box",
+      price: 45.00,
+      originalPrice: 55.00,
       image: rosesBouquet,
-      vendor: "Rose Garden Co.",
+      vendor: "Roses Garden",
       rating: 4.9,
       reviewCount: 67,
-      category: "Roses",
+      category: "Gift Boxes",
     },
     {
       id: "5",
-      name: "Seasonal Peony Mix",
-      price: 98.00,
+      name: "Wedding Bouquet Package",
+      price: 180.00,
       image: whitePeonies,
-      vendor: "Bloom & Blossom",
-      rating: 4.6,
+      vendor: "Roses Garden",
+      rating: 5.0,
       reviewCount: 43,
-      category: "Peonies",
+      category: "Wedding",
     },
     {
       id: "6",
-      name: "Garden Fresh Wildflowers",
-      price: 54.99,
+      name: "Birthday Special Arrangement",
+      price: 65.00,
       image: springWildflowers,
-      vendor: "Meadow Fresh",
+      vendor: "Roses Garden",
       rating: 4.8,
       reviewCount: 92,
-      category: "Mixed",
+      category: "Occasions",
     },
   ];
 
   const categories = [
-    { name: "Roses", count: 24, color: "bg-primary" },
-    { name: "Peonies", count: 18, color: "bg-accent" },
-    { name: "Mixed Bouquets", count: 32, color: "bg-sage" },
-    { name: "Wedding", count: 16, color: "bg-coral" },
-    { name: "Seasonal", count: 28, color: "bg-secondary" },
+    { name: "Natural Roses", count: 15, color: "bg-primary", arabic: "الورد الطبيعي" },
+    { name: "Gift Boxes", count: 12, color: "bg-accent", arabic: "بوكسات السعادة" },
+    { name: "Wedding Services", count: 8, color: "bg-sage", arabic: "كوش الأفراح" },
+    { name: "Bridal Bouquets", count: 6, color: "bg-coral", arabic: "مسكات العروس" },
+    { name: "Special Occasions", count: 20, color: "bg-secondary", arabic: "المناسبات" },
   ];
 
   return (
@@ -100,6 +101,7 @@ const Marketplace = () => {
                 <CardContent className="p-4 text-center">
                   <div className={`w-12 h-12 ${category.color} rounded-full mx-auto mb-3 opacity-20`} />
                   <h3 className="font-semibold text-card-foreground">{category.name}</h3>
+                  <p className="text-xs text-muted-foreground mb-1">{category.arabic}</p>
                   <p className="text-sm text-muted-foreground">{category.count} items</p>
                 </CardContent>
               </Card>

@@ -11,7 +11,10 @@ const Navigation = () => {
         <div className="flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
             <Flower2 className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold text-foreground">FloralMarket</span>
+            <div className="flex flex-col">
+              <span className="text-lg font-bold text-foreground">Roses Garden</span>
+              <span className="text-xs text-muted-foreground">حديقة الأزهار</span>
+            </div>
           </Link>
 
           <div className="hidden md:flex items-center space-x-8">
@@ -24,20 +27,28 @@ const Navigation = () => {
               Marketplace
             </Link>
             <Link 
-              to="/categories" 
+              to="/natural-roses" 
               className={`text-sm font-medium transition-colors hover:text-primary ${
-                location.pathname === "/categories" ? "text-primary" : "text-muted-foreground"
+                location.pathname === "/natural-roses" ? "text-primary" : "text-muted-foreground"
               }`}
             >
-              Categories
+              Natural Roses
             </Link>
             <Link 
-              to="/vendors" 
+              to="/gift-boxes" 
               className={`text-sm font-medium transition-colors hover:text-primary ${
-                location.pathname === "/vendors" ? "text-primary" : "text-muted-foreground"
+                location.pathname === "/gift-boxes" ? "text-primary" : "text-muted-foreground"
               }`}
             >
-              Vendors
+              Gift Boxes
+            </Link>
+            <Link 
+              to="/occasions" 
+              className={`text-sm font-medium transition-colors hover:text-primary ${
+                location.pathname === "/occasions" ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              Occasions
             </Link>
             <Link 
               to="/admin" 

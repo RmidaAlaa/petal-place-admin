@@ -18,12 +18,12 @@ const HeroSection = () => {
       <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl">
           <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
-            Fresh Flowers
-            <span className="block text-primary">Delivered Daily</span>
+            <span className="block text-primary">Roses Garden</span>
+            Fresh Flowers & Gifts
           </h1>
           
           <p className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed">
-            Discover beautiful blooms from local vendors. Perfect arrangements for every occasion, delivered fresh to your door.
+            Premium natural roses, gift arrangements, and special occasion flowers. From wedding bouquets to birthday surprises - we make every moment beautiful.
           </p>
 
           {/* Search Bar */}
