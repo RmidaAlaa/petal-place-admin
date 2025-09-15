@@ -27,6 +27,14 @@ const Navigation = () => {
               Marketplace
             </Link>
             <Link 
+              to="/builder" 
+              className={`text-sm font-medium transition-colors hover:text-primary ${
+                location.pathname === "/builder" ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              Bouquet Builder
+            </Link>
+            <Link 
               to="/natural-roses" 
               className={`text-sm font-medium transition-colors hover:text-primary ${
                 location.pathname === "/natural-roses" ? "text-primary" : "text-muted-foreground"
