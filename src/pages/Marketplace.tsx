@@ -1,15 +1,27 @@
+import { useState, useMemo } from "react";
 import Navigation from "@/components/Navigation";
 import HeroSection from "@/components/HeroSection";
 import ProductCard from "@/components/ProductCard";
+import ProductFilters, { FilterOptions } from "@/components/ProductFilters";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Filter, Grid3X3, List } from "lucide-react";
+import { Grid3X3, List } from "lucide-react";
 import rosesBouquet from "@/assets/roses-bouquet.jpg";
 import whitePeonies from "@/assets/white-peonies.jpg";
 import springWildflowers from "@/assets/spring-wildflowers.jpg";
 
 const Marketplace = () => {
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [filters, setFilters] = useState<FilterOptions>({
+    search: '',
+    categories: [],
+    priceRange: [0, 500],
+    sortBy: 'name',
+    inStock: false,
+    isNew: false,
+    rating: 0,
+  });
   const featuredProducts = [
     {
       id: "1",
@@ -84,7 +96,77 @@ const Marketplace = () => {
     { name: "Wedding Services", count: 8, color: "bg-sage", arabic: "كوش الأفراح" },
     { name: "Bridal Bouquets", count: 6, color: "bg-coral", arabic: "مسكات العروس" },
     { name: "Special Occasions", count: 20, color: "bg-secondary", arabic: "المناسبات" },
+    { name: "Premium Flowers", count: 8, color: "bg-accent", arabic: "الورود الفاخرة" },
+    { name: "Wedding", count: 5, color: "bg-sage", arabic: "الأعراس" },
+    { name: "Occasions", count: 10, color: "bg-coral", arabic: "المناسبات" },
   ];
+
+  const filteredProducts = useMemo(() => {
+    let result = [...featuredProducts];
+
+    // Search filter
+    if (filters.search) {
+      result = result.filter(product =>
+        product.name.toLowerCase().includes(filters.search.toLowerCase()) ||
+        product.description?.toLowerCase().includes(filters.search.toLowerCase()) ||
+        product.category.toLowerCase().includes(filters.search.toLowerCase())
+      );
+    }
+
+    // Category filter
+    if (filters.categories.length > 0) {
+      result = result.filter(product =>
+        filters.categories.includes(product.category)
+      );
+    }
+
+    // Price range filter
+    result = result.filter(product =>
+      product.price >= filters.priceRange[0] && product.price <= filters.priceRange[1]
+    );
+
+    // Stock filter
+    if (filters.inStock) {
+      // Simulate stock check (in real app this would come from backend)
+      result = result.filter(() => Math.random() > 0.2);
+    }
+
+    // New items filter
+    if (filters.isNew) {
+      result = result.filter(product => product.isNew);
+    }
+
+    // Rating filter
+    if (filters.rating > 0) {
+      result = result.filter(product => product.rating >= filters.rating);
+    }
+
+    // Sort
+    switch (filters.sortBy) {
+      case 'name':
+        result.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case 'price-low':
+        result.sort((a, b) => a.price - b.price);
+        break;
+      case 'price-high':
+        result.sort((a, b) => b.price - a.price);
+        break;
+      case 'rating':
+        result.sort((a, b) => b.rating - a.rating);
+        break;
+      case 'newest':
+        result.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
+        break;
+      case 'popular':
+        result.sort((a, b) => b.reviewCount - a.reviewCount);
+        break;
+      default:
+        break;
+    }
+
+    return result;
+  }, [featuredProducts, filters]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -109,13 +191,21 @@ const Marketplace = () => {
           </div>
         </section>
 
-        {/* Filter and Sort Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
+        {/* Filter and Search Bar */}
+        <div className="mb-8">
+          <ProductFilters
+            filters={filters}
+            onFiltersChange={setFilters}
+            categories={categories.map(c => c.name)}
+          />
+        </div>
+
+        {/* Results Summary and View Toggle */}
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" className="border-border text-foreground">
-              <Filter className="h-4 w-4 mr-2" />
-              Filters
-            </Button>
+            <p className="text-sm text-muted-foreground">
+              Showing {filteredProducts.length} of {featuredProducts.length} products
+            </p>
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="bg-sage text-sage-foreground">
                 Fresh Today
@@ -127,29 +217,66 @@ const Marketplace = () => {
           </div>
           
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon">
+            <Button 
+              variant={viewMode === 'grid' ? 'default' : 'ghost'} 
+              size="icon"
+              onClick={() => setViewMode('grid')}
+            >
               <Grid3X3 className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon">
+            <Button 
+              variant={viewMode === 'list' ? 'default' : 'ghost'} 
+              size="icon"
+              onClick={() => setViewMode('list')}
+            >
               <List className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
-        {/* Featured Products */}
+        {/* Products */}
         <section>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-foreground">Featured Flowers</h2>
-            <Button variant="outline" className="border-border text-foreground">
-              View All
-            </Button>
+            <h2 className="text-2xl font-bold text-foreground">
+              {filters.search ? `Search Results for "${filters.search}"` : 'Featured Flowers'}
+            </h2>
+            {filteredProducts.length > 0 && (
+              <Button variant="outline" className="border-border text-foreground">
+                View All ({filteredProducts.length})
+              </Button>
+            )}
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} {...product} />
-            ))}
-          </div>
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-lg text-muted-foreground mb-4">No products match your current filters</p>
+              <Button 
+                variant="outline" 
+                onClick={() => setFilters({
+                  search: '',
+                  categories: [],
+                  priceRange: [0, 500],
+                  sortBy: 'name',
+                  inStock: false,
+                  isNew: false,
+                  rating: 0,
+                })}
+                className="border-border text-foreground"
+              >
+                Clear All Filters
+              </Button>
+            </div>
+          ) : (
+            <div className={
+              viewMode === 'grid' 
+                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                : "space-y-4"
+            }>
+              {filteredProducts.map((product) => (
+                <ProductCard key={product.id} {...product} />
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Load More */}

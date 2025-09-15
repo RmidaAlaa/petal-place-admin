@@ -1,9 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Flower2, ShoppingBag, Settings } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Flower2, ShoppingBag, User } from "lucide-react";
+import CartSidebar from "@/components/CartSidebar";
+import { useCart } from "@/contexts/CartContext";
 
 const Navigation = () => {
   const location = useLocation();
+  const { state } = useCart();
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -69,12 +73,22 @@ const Navigation = () => {
           </div>
 
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="icon">
-              <ShoppingBag className="h-5 w-5" />
-            </Button>
-            <Button variant="default" size="sm">
-              Sign In
-            </Button>
+            <CartSidebar>
+              <Button variant="ghost" size="icon" className="relative">
+                <ShoppingBag className="h-5 w-5" />
+                {state.itemCount > 0 && (
+                  <Badge variant="secondary" className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-primary text-primary-foreground">
+                    {state.itemCount}
+                  </Badge>
+                )}
+              </Button>
+            </CartSidebar>
+            <Link to="/profile">
+              <Button variant="outline" className="border-border text-foreground">
+                <User className="h-4 w-4 mr-2" />
+                Profile
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
