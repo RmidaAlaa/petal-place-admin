@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Star, Heart, ShoppingCart, Truck, Shield, RotateCcw, Plus, Minus } from 'lucide-react';
+import { Star, Heart, ShoppingCart, Truck, Shield, RotateCcw, Plus, Minus, CreditCard } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 export interface Product {
   id: string;
@@ -39,7 +41,9 @@ const ProductDetailModal = ({ product, open, onClose }: ProductDetailModalProps)
   const [quantity, setQuantity] = useState(1);
   const [isLiked, setIsLiked] = useState(false);
   const { addItem } = useCart();
+  const { state: authState } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   if (!product) return null;
 
@@ -68,10 +72,25 @@ const ProductDetailModal = ({ product, open, onClose }: ProductDetailModalProps)
   };
 
   const handleBuyNow = () => {
+    if (!authState.isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to proceed with purchase.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Add to cart first
     handleAddToCart();
+    
+    // Navigate to cart for immediate checkout
+    onClose();
+    navigate('/'); // This will open the cart sidebar when the page loads
+    
     toast({
-      title: "Quick Checkout",
-      description: "Redirecting to checkout... (Available after Supabase integration)",
+      title: "Added to Cart",
+      description: "Item added to cart. You can now proceed to checkout.",
     });
   };
 

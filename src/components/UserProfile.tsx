@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,63 +10,96 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, Settings, Package, Heart, MapPin, Phone, Mail, Calendar, Star, Gift } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { useFavorites } from '@/contexts/FavoritesContext';
+import apiService from '@/services/api';
 
 const UserProfile = () => {
+  const { state: authState, updateProfile } = useAuth();
+  const { state: favoritesState, removeFavorite } = useFavorites();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState({
-    name: 'Sarah Ahmad',
-    email: 'sarah.ahmad@example.com',
-    phone: '+966 50 123 4567',
-    address: 'Al Malqa, Riyadh, Saudi Arabia',
-    joinDate: '2024-01-15',
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    joinDate: '',
     avatar: '',
   });
-  
-  const { toast } = useToast();
+  const [orders, setOrders] = useState<any[]>([]);
 
-  const handleSave = () => {
-    toast({
-      title: "Profile Updated",
-      description: "Profile management will be available after authentication setup.",
-    });
+  useEffect(() => {
+    if (authState.isAuthenticated && authState.user) {
+      setUser({
+        name: `${authState.user.first_name} ${authState.user.last_name}`,
+        email: authState.user.email,
+        phone: authState.user.phone || '',
+        address: '',
+        joinDate: authState.user.created_at,
+        avatar: '',
+      });
+      loadUserData();
+    }
+  }, [authState.isAuthenticated, authState.user]);
+
+  const loadUserData = async () => {
+    try {
+      const [ordersData] = await Promise.all([
+        apiService.getMyOrders(10, 0),
+        // Add other API calls for favorites, etc.
+      ]);
+      setOrders(ordersData);
+    } catch (error) {
+      console.error('Failed to load user data:', error);
+    }
   };
 
-  const orderHistory = [
+  const handleSave = async () => {
+    if (!authState.isAuthenticated) return;
+
+    setIsLoading(true);
+    try {
+      const [firstName, ...lastNameParts] = user.name.split(' ');
+      const lastName = lastNameParts.join(' ');
+
+      await updateProfile({
+        first_name: firstName,
+        last_name: lastName,
+        phone: user.phone,
+      });
+
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been updated successfully.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Update Failed",
+        description: error.message || "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Use real order data from API
+  const orderHistory = orders.length > 0 ? orders : [
     {
       id: 'ORD-001',
-      date: '2024-09-10',
+      order_number: 'ORD-001',
+      created_at: '2024-09-10',
       status: 'Delivered',
-      total: 185.00,
+      total_amount: 185.00,
       items: [
         { name: 'Wedding Bouquet Package', price: 180.00, quantity: 1 },
         { name: 'Delivery Fee', price: 5.00, quantity: 1 }
       ]
-    },
-    {
-      id: 'ORD-002',
-      date: '2024-09-05',
-      status: 'Delivered',
-      total: 67.00,
-      items: [
-        { name: 'Natural Roses (جوري)', price: 24.00, quantity: 3 },
-        { name: 'Gift Wrapping', price: 15.00, quantity: 1 }
-      ]
-    },
-    {
-      id: 'ORD-003',
-      date: '2024-08-28',
-      status: 'Delivered',
-      total: 45.00,
-      items: [
-        { name: 'Happiness Gift Box', price: 45.00, quantity: 1 }
-      ]
     }
   ];
 
-  const favorites = [
-    { id: '1', name: 'Natural Roses (جوري)', price: 8.00, category: 'Natural Roses' },
-    { id: '2', name: 'Wedding Bouquet Package', price: 180.00, category: 'Wedding' },
-    { id: '3', name: 'Happiness Gift Box', price: 45.00, category: 'Gift Boxes' },
-  ];
+  const favorites = favoritesState.items;
 
   const loyaltyPoints = {
     current: 1250,
@@ -181,8 +214,12 @@ const UserProfile = () => {
                   />
                 </div>
 
-                <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                  Save Changes
+                <Button 
+                  onClick={handleSave} 
+                  disabled={isLoading}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
+                  {isLoading ? 'Saving...' : 'Save Changes'}
                 </Button>
               </CardContent>
             </Card>
@@ -201,29 +238,31 @@ const UserProfile = () => {
                   <div key={order.id} className="border border-border rounded-lg p-4">
                     <div className="flex justify-between items-start mb-3">
                       <div>
-                        <h3 className="font-semibold text-foreground">Order #{order.id}</h3>
+                        <h3 className="font-semibold text-foreground">Order #{order.order_number || order.id}</h3>
                         <p className="text-sm text-muted-foreground flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
-                          {new Date(order.date).toLocaleDateString()}
+                          {new Date(order.created_at || order.date).toLocaleDateString()}
                         </p>
                       </div>
                       <div className="text-right">
                         <Badge variant="secondary" className="bg-sage text-sage-foreground mb-1">
                           {order.status}
                         </Badge>
-                        <p className="text-lg font-semibold text-primary">{order.total.toFixed(2)} SAR</p>
+                        <p className="text-lg font-semibold text-primary">{(order.total_amount || order.total).toFixed(2)} SAR</p>
                       </div>
                     </div>
                     
                     <Separator className="my-3" />
                     
                     <div className="space-y-2">
-                      {order.items.map((item, index) => (
+                      {order.items ? order.items.map((item: any, index: number) => (
                         <div key={index} className="flex justify-between text-sm">
                           <span>{item.name} x{item.quantity}</span>
                           <span>{item.price.toFixed(2)} SAR</span>
                         </div>
-                      ))}
+                      )) : (
+                        <p className="text-sm text-muted-foreground">No items available</p>
+                      )}
                     </div>
                     
                     <div className="flex gap-2 mt-4">
@@ -254,7 +293,12 @@ const UserProfile = () => {
                     <div className="flex items-center gap-4">
                       <span className="font-semibold text-primary">{item.price.toFixed(2)} SAR</span>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="border-border">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="border-border"
+                          onClick={() => removeFavorite(item.id)}
+                        >
                           <Heart className="h-4 w-4 fill-primary text-primary" />
                         </Button>
                         <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">

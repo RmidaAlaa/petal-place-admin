@@ -1,73 +1,308 @@
-# Welcome to your Lovable project
+# Petal Place - Flower Marketplace Admin
 
-## Project info
+A comprehensive flower marketplace application with admin dashboard, built with React, TypeScript, and Node.js.
 
-**URL**: https://lovable.dev/projects/79572f65-f61f-4477-8c96-db65646005aa
+## 🌸 Features
 
-## How can I edit this code?
+### Frontend Features
+- **Modern UI/UX**: Built with React 18, TypeScript, and Tailwind CSS
+- **Authentication**: Complete user authentication with JWT tokens
+- **Admin Dashboard**: Real-time analytics and order management
+- **Product Management**: Full CRUD operations for products
+- **Bouquet Builder**: Interactive drag-and-drop bouquet creation
+- **Shopping Cart**: Persistent cart with context management
+- **Responsive Design**: Mobile-first responsive design
+- **Error Handling**: Comprehensive error boundaries and loading states
 
-There are several ways of editing your application.
+### Backend Features
+- **RESTful API**: Express.js with TypeScript
+- **Database**: PostgreSQL with proper schema design
+- **Authentication**: JWT-based authentication with role-based access
+- **Security**: Helmet, CORS, rate limiting, input validation
+- **Real-time Data**: Live order and inventory updates
+- **File Upload**: Image upload for products
+- **Email Notifications**: Order confirmation and updates
 
-**Use Lovable**
+## 🚀 Quick Start
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/79572f65-f61f-4477-8c96-db65646005aa) and start prompting.
+### Prerequisites
+- Node.js 18+ 
+- PostgreSQL 12+
+- npm or yarn
 
-Changes made via Lovable will be committed automatically to this repo.
+### Installation
 
-**Use your preferred IDE**
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/RmidaAlaa/petal-place-admin.git
+   cd petal-place-admin
+   ```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+2. **Install dependencies**
+   ```bash
+   # Install frontend dependencies
+   npm install
+   
+   # Install backend dependencies
+   cd backend
+   npm install
+   cd ..
+   ```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+3. **Set up the database**
+   ```bash
+   # Create PostgreSQL database
+   createdb petal_place
+   
+   # Run the schema
+   psql petal_place < backend/src/database/schema.sql
+   ```
 
-Follow these steps:
+4. **Configure environment variables**
+   ```bash
+   # Copy environment files
+   cp env.example .env
+   cp backend/env.example backend/.env
+   
+   # Edit the .env files with your configuration
+   ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+5. **Start the development servers**
+   ```bash
+   # Terminal 1: Start backend
+   cd backend
+   npm run dev
+   
+   # Terminal 2: Start frontend
+   npm run dev
+   ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+6. **Access the application**
+   - Frontend: http://localhost:5173
+   - Backend API: http://localhost:3001
+   - Admin Dashboard: http://localhost:5173/admin
 
-# Step 3: Install the necessary dependencies.
-npm i
+## 📁 Project Structure
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+petal-place-admin/
+├── src/                          # Frontend source code
+│   ├── components/               # React components
+│   │   ├── ui/                  # Reusable UI components
+│   │   ├── AuthModal.tsx        # Authentication modal
+│   │   ├── BouquetBuilder.tsx   # Bouquet creation tool
+│   │   ├── CartSidebar.tsx      # Shopping cart
+│   │   └── ...
+│   ├── contexts/                # React contexts
+│   │   ├── AuthContext.tsx      # Authentication state
+│   │   └── CartContext.tsx      # Shopping cart state
+│   ├── pages/                   # Page components
+│   │   ├── Admin.tsx            # Admin dashboard
+│   │   ├── Marketplace.tsx      # Product marketplace
+│   │   └── ...
+│   ├── services/                # API services
+│   │   └── api.ts               # API client
+│   └── ...
+├── backend/                     # Backend source code
+│   ├── src/
+│   │   ├── database/            # Database configuration
+│   │   ├── models/              # Data models
+│   │   ├── routes/              # API routes
+│   │   ├── middleware/          # Express middleware
+│   │   └── server.ts            # Main server file
+│   └── ...
+└── ...
 ```
 
-**Edit a file directly in GitHub**
+## 🔧 Configuration
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Environment Variables
 
-**Use GitHub Codespaces**
+#### Frontend (.env)
+```env
+VITE_API_URL=http://localhost:3001/api
+VITE_APP_NAME=Petal Place
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+#### Backend (backend/.env)
+```env
+# Database
+DATABASE_URL=postgresql://username:password@localhost:5432/petal_place
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=petal_place
+DB_USER=username
+DB_PASSWORD=password
 
-## What technologies are used for this project?
+# JWT
+JWT_SECRET=your-super-secret-jwt-key-here
+JWT_EXPIRES_IN=7d
 
-This project is built with:
+# Server
+PORT=3001
+NODE_ENV=development
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+# Email (Optional)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
 
-## How can I deploy this project?
+# Stripe (Optional)
+STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
+STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key
+```
 
-Simply open [Lovable](https://lovable.dev/projects/79572f65-f61f-4477-8c96-db65646005aa) and click on Share -> Publish.
+## 🎯 API Endpoints
 
-## Can I connect a custom domain to my Lovable project?
+### Authentication
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `GET /api/auth/me` - Get current user
+- `PUT /api/auth/profile` - Update profile
+- `POST /api/auth/change-password` - Change password
 
-Yes, you can!
+### Products
+- `GET /api/products` - Get all products (with filters)
+- `GET /api/products/:id` - Get product by ID
+- `POST /api/products` - Create product (vendor/admin)
+- `PUT /api/products/:id` - Update product (vendor/admin)
+- `DELETE /api/products/:id` - Delete product (vendor/admin)
+- `PATCH /api/products/:id/stock` - Update stock
+- `GET /api/products/inventory/low-stock` - Get low stock products
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Orders
+- `POST /api/orders` - Create order
+- `GET /api/orders/my-orders` - Get user orders
+- `GET /api/orders/:id` - Get order by ID
+- `GET /api/orders` - Get all orders (admin)
+- `PATCH /api/orders/:id/status` - Update order status (admin)
+- `PATCH /api/orders/:id/payment` - Update payment status (admin)
+- `GET /api/orders/stats/overview` - Get order statistics (admin)
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## 🛠️ Development
+
+### Available Scripts
+
+#### Frontend
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run preview      # Preview production build
+npm run lint         # Run ESLint
+```
+
+#### Backend
+```bash
+npm run dev          # Start development server with hot reload
+npm run build        # Build TypeScript
+npm start            # Start production server
+npm test             # Run tests
+```
+
+### Database Migrations
+
+The database schema is defined in `backend/src/database/schema.sql`. To apply changes:
+
+```bash
+psql petal_place < backend/src/database/schema.sql
+```
+
+## 🧪 Testing
+
+### Frontend Testing
+```bash
+npm run test         # Run frontend tests
+npm run test:coverage # Run tests with coverage
+```
+
+### Backend Testing
+```bash
+cd backend
+npm test             # Run backend tests
+npm run test:watch   # Run tests in watch mode
+```
+
+## 🚀 Deployment
+
+### Frontend Deployment (Vercel/Netlify)
+1. Build the project: `npm run build`
+2. Deploy the `dist` folder
+3. Set environment variables in your hosting platform
+
+### Backend Deployment (Railway/Heroku)
+1. Set up PostgreSQL database
+2. Configure environment variables
+3. Deploy the backend folder
+4. Run database migrations
+
+### Docker Deployment
+```bash
+# Build and run with Docker Compose
+docker-compose up -d
+```
+
+## 📊 Admin Features
+
+### Dashboard
+- Real-time order statistics
+- Revenue tracking
+- Low stock alerts
+- Recent orders management
+
+### Product Management
+- Add/edit/delete products
+- Inventory tracking
+- Image upload
+- Category management
+
+### Order Management
+- View all orders
+- Update order status
+- Track shipments
+- Handle refunds
+
+## 🔐 User Roles
+
+### Customer
+- Browse products
+- Create custom bouquets
+- Place orders
+- Manage profile
+
+### Vendor
+- Manage products
+- View orders
+- Update inventory
+- Access vendor dashboard
+
+### Admin
+- Full system access
+- User management
+- Order management
+- Analytics dashboard
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/new-feature`
+3. Commit changes: `git commit -am 'Add new feature'`
+4. Push to branch: `git push origin feature/new-feature`
+5. Submit a pull request
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+For support, email support@petalplace.com or create an issue in the repository.
+
+## 🙏 Acknowledgments
+
+- [React](https://reactjs.org/) - Frontend framework
+- [TypeScript](https://www.typescriptlang.org/) - Type safety
+- [Tailwind CSS](https://tailwindcss.com/) - Styling
+- [shadcn/ui](https://ui.shadcn.com/) - UI components
+- [Express.js](https://expressjs.com/) - Backend framework
+- [PostgreSQL](https://www.postgresql.org/) - Database

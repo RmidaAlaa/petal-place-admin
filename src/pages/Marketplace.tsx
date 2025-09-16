@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import HeroSection from "@/components/HeroSection";
 import ProductCard from "@/components/ProductCard";
@@ -12,6 +13,7 @@ import whitePeonies from "@/assets/white-peonies.jpg";
 import springWildflowers from "@/assets/spring-wildflowers.jpg";
 
 const Marketplace = () => {
+  const [searchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filters, setFilters] = useState<FilterOptions>({
     search: '',
@@ -22,6 +24,14 @@ const Marketplace = () => {
     isNew: false,
     rating: 0,
   });
+
+  // Handle search from URL parameters
+  useEffect(() => {
+    const searchQuery = searchParams.get('search');
+    if (searchQuery) {
+      setFilters(prev => ({ ...prev, search: searchQuery }));
+    }
+  }, [searchParams]);
   const featuredProducts = [
     {
       id: "1",

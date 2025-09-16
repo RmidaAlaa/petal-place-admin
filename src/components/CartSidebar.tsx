@@ -1,11 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ShoppingBag, Plus, Minus, X, ShoppingCart } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ShoppingBag, Plus, Minus, X, ShoppingCart, CreditCard, MapPin, User } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import apiService from '@/services/api';
 
 interface CartSidebarProps {
   children: React.ReactNode;
@@ -13,13 +20,78 @@ interface CartSidebarProps {
 
 const CartSidebar = ({ children }: CartSidebarProps) => {
   const { state, removeItem, updateQuantity, clearCart } = useCart();
+  const { state: authState } = useAuth();
   const { toast } = useToast();
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [checkoutData, setCheckoutData] = useState({
+    shippingAddress: {
+      street: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      country: 'Saudi Arabia'
+    },
+    paymentMethod: 'card',
+    notes: ''
+  });
 
   const handleCheckout = () => {
-    toast({
-      title: "Checkout",
-      description: "Checkout functionality will be available after Supabase integration.",
-    });
+    if (!authState.isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to proceed with checkout.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (state.items.length === 0) {
+      toast({
+        title: "Empty Cart",
+        description: "Please add items to your cart before checkout.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setShowCheckout(true);
+  };
+
+  const processOrder = async () => {
+    if (!authState.isAuthenticated) return;
+
+    setIsProcessing(true);
+    try {
+      const orderData = {
+        items: state.items.map(item => ({
+          product_id: item.id.split('-')[0], // Extract original product ID
+          quantity: item.quantity,
+          unit_price: item.price
+        })),
+        shipping_address: checkoutData.shippingAddress,
+        payment_method: checkoutData.paymentMethod,
+        notes: checkoutData.notes
+      };
+
+      const order = await apiService.createOrder(orderData);
+      
+      toast({
+        title: "Order Placed Successfully!",
+        description: `Order #${order.order_number} has been created.`,
+      });
+
+      clearCart();
+      setShowCheckout(false);
+    } catch (error: any) {
+      toast({
+        title: "Order Failed",
+        description: error.message || "Failed to place order. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -163,6 +235,156 @@ const CartSidebar = ({ children }: CartSidebarProps) => {
           )}
         </div>
       </SheetContent>
+
+      {/* Checkout Dialog */}
+      <Dialog open={showCheckout} onOpenChange={setShowCheckout}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Checkout
+            </DialogTitle>
+            <DialogDescription>
+              Complete your order by providing shipping and payment information
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Order Summary */}
+            <div className="bg-muted p-4 rounded-lg">
+              <h3 className="font-semibold mb-3">Order Summary</h3>
+              <div className="space-y-2">
+                {state.items.map((item) => (
+                  <div key={item.id} className="flex justify-between text-sm">
+                    <span>{item.name} x{item.quantity}</span>
+                    <span>{(item.price * item.quantity).toFixed(2)} SAR</span>
+                  </div>
+                ))}
+                <Separator />
+                <div className="flex justify-between font-semibold">
+                  <span>Total</span>
+                  <span>{state.total.toFixed(2)} SAR</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Shipping Address */}
+            <div className="space-y-4">
+              <h3 className="font-semibold flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                Shipping Address
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="street">Street Address</Label>
+                  <Input
+                    id="street"
+                    value={checkoutData.shippingAddress.street}
+                    onChange={(e) => setCheckoutData({
+                      ...checkoutData,
+                      shippingAddress: { ...checkoutData.shippingAddress, street: e.target.value }
+                    })}
+                    placeholder="Enter street address"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="city">City</Label>
+                  <Input
+                    id="city"
+                    value={checkoutData.shippingAddress.city}
+                    onChange={(e) => setCheckoutData({
+                      ...checkoutData,
+                      shippingAddress: { ...checkoutData.shippingAddress, city: e.target.value }
+                    })}
+                    placeholder="Enter city"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="state">State/Province</Label>
+                  <Input
+                    id="state"
+                    value={checkoutData.shippingAddress.state}
+                    onChange={(e) => setCheckoutData({
+                      ...checkoutData,
+                      shippingAddress: { ...checkoutData.shippingAddress, state: e.target.value }
+                    })}
+                    placeholder="Enter state"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="zipCode">ZIP Code</Label>
+                  <Input
+                    id="zipCode"
+                    value={checkoutData.shippingAddress.zipCode}
+                    onChange={(e) => setCheckoutData({
+                      ...checkoutData,
+                      shippingAddress: { ...checkoutData.shippingAddress, zipCode: e.target.value }
+                    })}
+                    placeholder="Enter ZIP code"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Method */}
+            <div className="space-y-4">
+              <h3 className="font-semibold flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                Payment Method
+              </h3>
+              
+              <Select 
+                value={checkoutData.paymentMethod} 
+                onValueChange={(value) => setCheckoutData({ ...checkoutData, paymentMethod: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select payment method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="card">Credit/Debit Card</SelectItem>
+                  <SelectItem value="bank">Bank Transfer</SelectItem>
+                  <SelectItem value="cash">Cash on Delivery</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Order Notes */}
+            <div className="space-y-2">
+              <Label htmlFor="notes">Order Notes (Optional)</Label>
+              <Textarea
+                id="notes"
+                value={checkoutData.notes}
+                onChange={(e) => setCheckoutData({ ...checkoutData, notes: e.target.value })}
+                placeholder="Special instructions for your order..."
+                rows={3}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowCheckout(false)}
+                className="flex-1"
+                disabled={isProcessing}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={processOrder}
+                disabled={isProcessing || !checkoutData.shippingAddress.street || !checkoutData.shippingAddress.city}
+                className="flex-1 bg-primary hover:bg-primary/90"
+              >
+                {isProcessing ? 'Processing...' : `Place Order - ${state.total.toFixed(2)} SAR`}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Sheet>
   );
 };

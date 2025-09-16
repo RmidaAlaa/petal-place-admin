@@ -4,6 +4,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Star, Eye } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+import { useFavorites } from "@/contexts/FavoritesContext";
 import { useToast } from "@/hooks/use-toast";
 import ProductDetailModal, { Product } from "@/components/ProductDetailModal";
 
@@ -34,9 +35,9 @@ const ProductCard = ({
   isNew = false,
   description,
 }: ProductCardProps) => {
-  const [isLiked, setIsLiked] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const { addItem } = useCart();
+  const { addFavorite, removeFavorite, isFavorite } = useFavorites();
   const { toast } = useToast();
 
   const product: Product = {
@@ -83,11 +84,27 @@ const ProductCard = ({
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsLiked(!isLiked);
-    toast({
-      title: isLiked ? "Removed from Favorites" : "Added to Favorites",
-      description: `${name} ${isLiked ? 'removed from' : 'added to'} your favorites.`,
-    });
+    
+    if (isFavorite(id)) {
+      removeFavorite(id);
+      toast({
+        title: "Removed from Favorites",
+        description: `${name} removed from your favorites.`,
+      });
+    } else {
+      addFavorite({
+        id,
+        name,
+        price,
+        image,
+        vendor,
+        category,
+      });
+      toast({
+        title: "Added to Favorites",
+        description: `${name} added to your favorites.`,
+      });
+    }
   };
   return (
     <>
@@ -129,7 +146,7 @@ const ProductCard = ({
               className="bg-background/80 hover:bg-background text-foreground"
               onClick={handleLike}
             >
-              <Heart className={`h-4 w-4 ${isLiked ? 'fill-primary text-primary' : ''}`} />
+              <Heart className={`h-4 w-4 ${isFavorite(id) ? 'fill-primary text-primary' : ''}`} />
             </Button>
           </div>
         </div>

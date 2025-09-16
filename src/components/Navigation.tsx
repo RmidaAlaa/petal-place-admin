@@ -1,13 +1,25 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Flower2, ShoppingBag, User } from "lucide-react";
+import { Flower2, ShoppingBag, User, LogOut, Settings } from "lucide-react";
 import CartSidebar from "@/components/CartSidebar";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { AuthModal } from "@/components/AuthModal";
+import { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navigation = () => {
   const location = useLocation();
   const { state } = useCart();
+  const { state: authState, logout } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -83,15 +95,64 @@ const Navigation = () => {
                 )}
               </Button>
             </CartSidebar>
-            <Link to="/profile">
-              <Button variant="outline" className="border-border text-foreground">
+            
+            {authState.isAuthenticated ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="border-border text-foreground">
+                    <User className="h-4 w-4 mr-2" />
+                    {authState.user?.first_name}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="flex items-center justify-start gap-2 p-2">
+                    <div className="flex flex-col space-y-1 leading-none">
+                      <p className="font-medium">{authState.user?.first_name} {authState.user?.last_name}</p>
+                      <p className="w-[200px] truncate text-sm text-muted-foreground">
+                        {authState.user?.email}
+                      </p>
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Profile Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  {authState.user?.role === 'admin' && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin">
+                        <User className="mr-2 h-4 w-4" />
+                        Admin Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={logout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button 
+                variant="outline" 
+                className="border-border text-foreground"
+                onClick={() => setShowAuthModal(true)}
+              >
                 <User className="h-4 w-4 mr-2" />
-                Profile
+                Sign In
               </Button>
-            </Link>
+            )}
           </div>
         </div>
       </div>
+      
+      <AuthModal 
+        open={showAuthModal} 
+        onClose={() => setShowAuthModal(false)} 
+      />
     </nav>
   );
 };

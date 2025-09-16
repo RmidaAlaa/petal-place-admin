@@ -4,10 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { FlowerInventory } from './FlowerInventory';
 import { BouquetCanvas } from './BouquetCanvas';
-import { Save, Share2, RotateCcw, ShoppingCart } from 'lucide-react';
+import { Save, Share2, RotateCcw, ShoppingCart, Download, Copy } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCart } from '@/contexts/CartContext';
 
 export interface FlowerItem {
   id: string;
@@ -81,6 +87,11 @@ export const BouquetBuilder: React.FC = () => {
   const [bouquetItems, setBouquetItems] = useState<BouquetItem[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [wrapping, setWrapping] = useState<'paper' | 'cellophane' | 'burlap'>('paper');
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [bouquetName, setBouquetName] = useState('');
+  const [bouquetDescription, setBouquetDescription] = useState('');
+  const { state: authState } = useAuth();
+  const { addItem } = useCart();
 
   const basePrice = 15; // Base bouquet price
   const wrappingPrices = { paper: 5, cellophane: 3, burlap: 8 };
@@ -123,24 +134,94 @@ export const BouquetBuilder: React.FC = () => {
   }, []);
 
   const saveBouquet = useCallback(() => {
-    // TODO: Implement save to account
-    toast.success('Bouquet saved to your account');
-  }, []);
+    if (!authState.isAuthenticated) {
+      toast.error('Please sign in to save bouquets');
+      return;
+    }
+    setShowSaveDialog(true);
+  }, [authState.isAuthenticated]);
+
+  const handleSaveBouquet = useCallback(async () => {
+    if (!bouquetName.trim()) {
+      toast.error('Please enter a bouquet name');
+      return;
+    }
+
+    try {
+      // In a real app, this would save to the backend
+      const bouquetData = {
+        name: bouquetName,
+        description: bouquetDescription,
+        flowers: bouquetItems,
+        wrapping: wrapping,
+        totalPrice: totalPrice
+      };
+
+      // For now, save to localStorage
+      const savedBouquets = JSON.parse(localStorage.getItem('savedBouquets') || '[]');
+      savedBouquets.push({
+        id: Date.now().toString(),
+        ...bouquetData,
+        createdAt: new Date().toISOString()
+      });
+      localStorage.setItem('savedBouquets', JSON.stringify(savedBouquets));
+
+      toast.success('Bouquet saved successfully!');
+      setShowSaveDialog(false);
+      setBouquetName('');
+      setBouquetDescription('');
+    } catch (error) {
+      toast.error('Failed to save bouquet');
+    }
+  }, [bouquetName, bouquetDescription, bouquetItems, wrapping, totalPrice]);
 
   const shareBouquet = useCallback(() => {
-    // TODO: Implement sharing functionality
-    navigator.clipboard.writeText(window.location.href);
-    toast.success('Bouquet link copied to clipboard');
-  }, []);
+    if (bouquetItems.length === 0) {
+      toast.error('Please add flowers to your bouquet first');
+      return;
+    }
+
+    // Create a shareable link with bouquet data
+    const bouquetData = {
+      flowers: bouquetItems.map(item => ({
+        id: item.id,
+        name: item.name,
+        color: item.color,
+        x: item.x,
+        y: item.y,
+        rotation: item.rotation,
+        scale: item.scale
+      })),
+      wrapping: wrapping,
+      totalPrice: totalPrice
+    };
+
+    const shareUrl = `${window.location.origin}/builder?data=${encodeURIComponent(JSON.stringify(bouquetData))}`;
+    
+    navigator.clipboard.writeText(shareUrl);
+    toast.success('Bouquet link copied to clipboard!');
+  }, [bouquetItems, wrapping, totalPrice]);
 
   const addToCart = useCallback(() => {
     if (bouquetItems.length === 0) {
       toast.error('Please add flowers to your bouquet first');
       return;
     }
-    // TODO: Implement add to cart
-    toast.success(`Bouquet added to cart - ${totalPrice} SAR`);
-  }, [bouquetItems.length, totalPrice]);
+
+    const bouquetName = `Custom Bouquet - ${bouquetItems.length} flowers`;
+    
+    addItem({
+      id: `bouquet-${Date.now()}`,
+      name: bouquetName,
+      price: totalPrice,
+      image: '/placeholder.svg',
+      type: 'bouquet',
+      vendor: 'Custom Creation',
+      category: 'Custom Bouquets',
+    });
+
+    toast.success(`Custom bouquet added to cart - ${totalPrice} SAR`);
+  }, [bouquetItems.length, totalPrice, addItem]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-sage/20 to-cream">
@@ -287,6 +368,65 @@ export const BouquetBuilder: React.FC = () => {
             ) : null}
           </DragOverlay>
         </DndContext>
+
+        {/* Save Bouquet Dialog */}
+        <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Save Bouquet</DialogTitle>
+              <DialogDescription>
+                Give your bouquet a name and description to save it for later
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="bouquetName">Bouquet Name</Label>
+                <Input
+                  id="bouquetName"
+                  value={bouquetName}
+                  onChange={(e) => setBouquetName(e.target.value)}
+                  placeholder="Enter bouquet name"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bouquetDescription">Description (Optional)</Label>
+                <Textarea
+                  id="bouquetDescription"
+                  value={bouquetDescription}
+                  onChange={(e) => setBouquetDescription(e.target.value)}
+                  placeholder="Describe your bouquet..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="bg-muted p-3 rounded-lg">
+                <div className="text-sm text-muted-foreground">
+                  <p><strong>Flowers:</strong> {bouquetItems.length}</p>
+                  <p><strong>Wrapping:</strong> {wrapping}</p>
+                  <p><strong>Total Price:</strong> {totalPrice} SAR</p>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSaveDialog(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSaveBouquet}
+                  className="flex-1"
+                >
+                  Save Bouquet
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

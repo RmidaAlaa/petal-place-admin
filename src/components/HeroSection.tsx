@@ -1,9 +1,35 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/hero-flowers.jpg";
 
 const HeroSection = () => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
+
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      // Navigate to marketplace with search query
+      navigate(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  const handleShopNow = () => {
+    navigate('/');
+  };
+
+  const handleBrowseCategories = () => {
+    navigate('/#categories');
+  };
+
   return (
     <section className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
@@ -33,19 +59,36 @@ const HeroSection = () => {
               <Input
                 placeholder="Search flowers, arrangements..."
                 className="pl-10 h-12 bg-background/95 border-border"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={handleKeyPress}
               />
             </div>
-            <Button size="lg" className="h-12 px-8 bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Button 
+              size="lg" 
+              className="h-12 px-8 bg-primary hover:bg-primary/90 text-primary-foreground"
+              onClick={handleSearch}
+            >
               Search
             </Button>
           </div>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button size="lg" variant="default" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Button 
+              size="lg" 
+              variant="default" 
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+              onClick={handleShopNow}
+            >
               Shop Now
             </Button>
-            <Button size="lg" variant="outline" className="border-border text-foreground hover:bg-sage hover:text-sage-foreground">
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="border-border text-foreground hover:bg-sage hover:text-sage-foreground"
+              onClick={handleBrowseCategories}
+            >
               Browse Categories
             </Button>
           </div>
