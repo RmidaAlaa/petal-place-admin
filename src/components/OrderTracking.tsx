@@ -62,7 +62,7 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, orderNumber, cur
     try {
       setIsLoading(true);
       const data = await apiService.getOrderTracking(orderId);
-      setTrackingEntries(data);
+      setTrackingEntries(data as TrackingEntry[]);
     } catch (error: any) {
       toast({
         title: 'Error',

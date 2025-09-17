@@ -88,7 +88,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onResults, onLoading })
 
   const loadSuggestions = async () => {
     try {
-      const data = await apiService.getSearchSuggestions(filters.q);
+      const data = await apiService.getSearchSuggestions(filters.q) as { suggestions: { text: string }[] };
       setSuggestions(data.suggestions.map((s: any) => s.text));
       setShowSuggestions(true);
     } catch (error) {
@@ -117,7 +117,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onResults, onLoading })
       };
       
       const data = await apiService.advancedSearch(searchParams);
-      onResults(data);
+      onResults(data as SearchResult);
       
       // Save to search history if authenticated
       if (authState.isAuthenticated && filters.q.trim()) {

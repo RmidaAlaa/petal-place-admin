@@ -93,6 +93,20 @@ class ApiService {
     });
   }
 
+  async forgotPassword(email: string) {
+    return this.request('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    return this.request('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, new_password: newPassword }),
+    });
+  }
+
   // Product endpoints
   async getProducts(filters: {
     search?: string;
@@ -232,296 +246,63 @@ class ApiService {
     return this.request(`/orders/recent/list?limit=${limit}`);
   }
 
-  // Auth endpoints - additional
-  async forgotPassword(email: string) {
-    return this.request('/auth/forgot-password', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
-    });
-  }
-
-  async resetPassword(token: string, newPassword: string) {
-    return this.request('/auth/reset-password', {
-      method: 'POST',
-      body: JSON.stringify({ token, new_password: newPassword }),
-    });
-  }
-
-  // Partners endpoints
-  async getPartners() {
-    return this.request('/partners');
-  }
-
-  async getPartner(id: string) {
-    return this.request(`/partners/${id}`);
-  }
-
-  async createPartner(partnerData: any) {
-    return this.request('/partners', {
-      method: 'POST',
-      body: JSON.stringify(partnerData),
-    });
-  }
-
-  async updatePartner(id: string, partnerData: any) {
-    return this.request(`/partners/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(partnerData),
-    });
-  }
-
-  async deletePartner(id: string) {
-    return this.request(`/partners/${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // Location endpoints
-  async getUserLocation() {
-    return this.request('/locations/me');
-  }
-
-  async updateUserLocation(locationData: {
-    latitude: number;
-    longitude: number;
-    city?: string;
-    country?: string;
-    address?: string;
-  }) {
-    return this.request('/locations/me', {
-      method: 'POST',
-      body: JSON.stringify(locationData),
-    });
-  }
-
-  async getLocationHistory() {
-    return this.request('/locations/history');
-  }
-
-  // Upload endpoints
-  async uploadProductImage(file: File) {
-    const formData = new FormData();
-    formData.append('product', file);
-    
-    const url = `${this.baseURL}/upload/product`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        ...(this.token && { Authorization: `Bearer ${this.token}` }),
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error('Upload failed');
-    }
-
-    return response.json();
-  }
-
-  async uploadPartnerLogo(file: File) {
-    const formData = new FormData();
-    formData.append('partner', file);
-    
-    const url = `${this.baseURL}/upload/partner`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        ...(this.token && { Authorization: `Bearer ${this.token}` }),
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error('Upload failed');
-    }
-
-    return response.json();
-  }
-
-  async uploadAvatar(file: File) {
-    const formData = new FormData();
-    formData.append('avatar', file);
-    
-    const url = `${this.baseURL}/upload/avatar`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        ...(this.token && { Authorization: `Bearer ${this.token}` }),
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error('Upload failed');
-    }
-
-    return response.json();
-  }
-
-  // Payment endpoints
-  async createCheckoutSession(checkoutData: {
-    items: Array<{
-      product_id: string;
-      quantity: number;
-      unit_price: number;
-    }>;
-    shipping_address: any;
-  }) {
-    return this.request('/payments/create-checkout-session', {
+  // Checkout endpoints
+  async createCheckoutSession(checkoutData: any) {
+    return this.request('/checkout/create-session', {
       method: 'POST',
       body: JSON.stringify(checkoutData),
     });
   }
 
-  async confirmPayment(sessionId: string) {
-    return this.request('/payments/success', {
+  // Search endpoints
+  async getSearchSuggestions(query: string) {
+    return this.request(`/search/suggestions?q=${encodeURIComponent(query)}`);
+  }
+
+  async advancedSearch(params: any) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/search/advanced?${query}`);
+  }
+
+  // Review endpoints
+  async getProductReviews(productId: string, params: any = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/products/${productId}/reviews?${query}`);
+  }
+
+  async addProductReview(productId: string, reviewData: any) {
+    return this.request(`/products/${productId}/reviews`, {
       method: 'POST',
-      body: JSON.stringify({ session_id: sessionId }),
+      body: JSON.stringify(reviewData),
     });
   }
 
-  // Order Tracking endpoints
-  async getOrderTracking(orderId: string) {
-    return this.request(`/order-tracking/${orderId}`);
+  // Highlights endpoints
+  async getTopHighlights() {
+    return this.request('/highlights/featured');
   }
 
-  async addTrackingUpdate(orderId: string, trackingData: any) {
-    return this.request(`/order-tracking/${orderId}`, {
+  // Tracking endpoints
+  async getOrderTracking(orderId: string) {
+    return this.request(`/orders/${orderId}/tracking`);
+  }
+
+  async updateOrderTracking(orderId: string, trackingData: any) {
+    return this.request(`/orders/${orderId}/tracking`, {
       method: 'POST',
       body: JSON.stringify(trackingData),
     });
   }
 
   async getDeliverySlots(date: string) {
-    return this.request(`/order-tracking/delivery-slots/${date}`);
-  }
-
-  async cancelOrder(orderId: string, reason: string) {
-    return this.request(`/order-tracking/${orderId}/cancel`, {
-      method: 'POST',
-      body: JSON.stringify({ reason }),
-    });
+    return this.request(`/delivery/slots/${date}`);
   }
 
   async requestRefund(orderId: string, refundData: any) {
-    return this.request(`/order-tracking/${orderId}/refund`, {
+    return this.request(`/orders/${orderId}/refund`, {
       method: 'POST',
       body: JSON.stringify(refundData),
     });
-  }
-
-  // Inventory Management endpoints
-  async getInventoryTransactions(productId: string, params?: any) {
-    const queryParams = new URLSearchParams(params).toString();
-    return this.request(`/inventory/transactions/${productId}${queryParams ? `?${queryParams}` : ''}`);
-  }
-
-  async addInventoryTransaction(transactionData: any) {
-    return this.request('/inventory/transactions', {
-      method: 'POST',
-      body: JSON.stringify(transactionData),
-    });
-  }
-
-  async getStockAlerts(params?: any) {
-    const queryParams = new URLSearchParams(params).toString();
-    return this.request(`/inventory/alerts${queryParams ? `?${queryParams}` : ''}`);
-  }
-
-  async createStockAlert(alertData: any) {
-    return this.request('/inventory/alerts', {
-      method: 'POST',
-      body: JSON.stringify(alertData),
-    });
-  }
-
-  async resolveStockAlert(alertId: string) {
-    return this.request(`/inventory/alerts/${alertId}/resolve`, {
-      method: 'PATCH',
-    });
-  }
-
-  async bulkStockUpdate(updates: any[]) {
-    return this.request('/inventory/bulk-update', {
-      method: 'POST',
-      body: JSON.stringify({ updates }),
-    });
-  }
-
-  // Reviews endpoints
-  async getProductReviews(productId: string, params?: any) {
-    const queryParams = new URLSearchParams(params).toString();
-    return this.request(`/reviews/product/${productId}${queryParams ? `?${queryParams}` : ''}`);
-  }
-
-  async createReview(reviewData: any) {
-    return this.request('/reviews', {
-      method: 'POST',
-      body: JSON.stringify(reviewData),
-    });
-  }
-
-  async updateReview(reviewId: string, reviewData: any) {
-    return this.request(`/reviews/${reviewId}`, {
-      method: 'PUT',
-      body: JSON.stringify(reviewData),
-    });
-  }
-
-  async deleteReview(reviewId: string) {
-    return this.request(`/reviews/${reviewId}`, {
-      method: 'DELETE',
-    });
-  }
-
-  async approveReview(reviewId: string, approvalData: any) {
-    return this.request(`/reviews/${reviewId}/approve`, {
-      method: 'PATCH',
-      body: JSON.stringify(approvalData),
-    });
-  }
-
-  async markReviewHelpful(reviewId: string) {
-    return this.request(`/reviews/${reviewId}/helpful`, {
-      method: 'POST',
-    });
-  }
-
-  async getPendingReviews(params?: any) {
-    const queryParams = new URLSearchParams(params).toString();
-    return this.request(`/reviews/pending${queryParams ? `?${queryParams}` : ''}`);
-  }
-
-  // Advanced Search endpoints
-  async advancedSearch(params: any) {
-    const queryParams = new URLSearchParams(params).toString();
-    return this.request(`/search${queryParams ? `?${queryParams}` : ''}`);
-  }
-
-  async getSearchSuggestions(query: string) {
-    return this.request(`/search/suggestions?q=${encodeURIComponent(query)}`);
-  }
-
-  async getPopularSearches(limit?: number) {
-    const params = limit ? `?limit=${limit}` : '';
-    return this.request(`/search/popular${params}`);
-  }
-
-  async getSearchHistory(limit?: number) {
-    const params = limit ? `?limit=${limit}` : '';
-    return this.request(`/search/history${params}`);
-  }
-
-  async clearSearchHistory() {
-    return this.request('/search/history', {
-      method: 'DELETE',
-    });
-  }
-
-  async getSearchAnalytics(days?: number) {
-    const params = days ? `?days=${days}` : '';
-    return this.request(`/search/analytics${params}`);
   }
 }
 

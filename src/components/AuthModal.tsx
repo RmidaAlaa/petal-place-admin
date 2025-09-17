@@ -110,7 +110,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onClose }) => {
 
   const handleForgotPassword = async () => {
     try {
-      const response = await apiService.forgotPassword(forgotEmail);
+      const response = await apiService.forgotPassword(forgotEmail) as { token: string };
       toast({
         title: 'Reset Token Generated',
         description: `Token: ${response.token} (Copy this token to reset your password)`,
