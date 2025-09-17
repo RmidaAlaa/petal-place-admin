@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
+import apiService from '@/services/api';
 
 interface AuthModalProps {
   open: boolean;
@@ -16,7 +17,11 @@ interface AuthModalProps {
 
 export const AuthModal: React.FC<AuthModalProps> = ({ open, onClose }) => {
   const [isLogin, setIsLogin] = useState(true);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [resetToken, setResetToken] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -92,6 +97,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onClose }) => {
 
   const switchMode = () => {
     setIsLogin(!isLogin);
+    setShowForgotPassword(false);
     setFormData({
       email: '',
       password: '',
@@ -100,6 +106,43 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onClose }) => {
       last_name: '',
       phone: '',
     });
+  };
+
+  const handleForgotPassword = async () => {
+    try {
+      const response = await apiService.forgotPassword(forgotEmail);
+      toast({
+        title: 'Reset Token Generated',
+        description: `Token: ${response.token} (Copy this token to reset your password)`,
+      });
+      setResetToken(response.token);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to send reset email',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleResetPassword = async () => {
+    try {
+      await apiService.resetPassword(resetToken, newPassword);
+      toast({
+        title: 'Password Reset Successful',
+        description: 'Your password has been updated successfully',
+      });
+      setShowForgotPassword(false);
+      setResetToken('');
+      setNewPassword('');
+      setForgotEmail('');
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to reset password',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -180,6 +223,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onClose }) => {
                   'Sign In'
                 )}
               </Button>
+
+              <div className="text-center">
+                <Button 
+                  variant="link" 
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-sm text-muted-foreground"
+                >
+                  Forgot your password?
+                </Button>
+              </div>
             </form>
           </TabsContent>
 
@@ -289,6 +342,82 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onClose }) => {
             </form>
           </TabsContent>
         </Tabs>
+
+        {/* Forgot Password Form */}
+        {showForgotPassword && (
+          <div className="space-y-4 border-t pt-4">
+            <h3 className="text-lg font-semibold">Reset Password</h3>
+            
+            {!resetToken ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="forgotEmail">Email</Label>
+                  <Input
+                    id="forgotEmail"
+                    type="email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    required
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleForgotPassword} className="flex-1">
+                    Send Reset Token
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowForgotPassword(false)}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="resetToken">Reset Token</Label>
+                  <Input
+                    id="resetToken"
+                    value={resetToken}
+                    onChange={(e) => setResetToken(e.target.value)}
+                    placeholder="Enter reset token"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    required
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleResetPassword} className="flex-1">
+                    Reset Password
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setShowForgotPassword(false);
+                      setResetToken('');
+                      setNewPassword('');
+                      setForgotEmail('');
+                    }}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="text-center text-sm text-muted-foreground">
           {isLogin ? (

@@ -63,30 +63,33 @@ const CartSidebar = ({ children }: CartSidebarProps) => {
 
     setIsProcessing(true);
     try {
-      const orderData = {
+      // Create Stripe checkout session
+      const checkoutData = {
         items: state.items.map(item => ({
           product_id: item.id.split('-')[0], // Extract original product ID
           quantity: item.quantity,
           unit_price: item.price
         })),
-        shipping_address: checkoutData.shippingAddress,
-        payment_method: checkoutData.paymentMethod,
-        notes: checkoutData.notes
+        shipping_address: {
+          firstName: authState.user?.first_name || '',
+          lastName: authState.user?.last_name || '',
+          address: checkoutData.shippingAddress.street,
+          city: checkoutData.shippingAddress.city,
+          state: checkoutData.shippingAddress.state,
+          zipCode: checkoutData.shippingAddress.zipCode,
+          country: checkoutData.shippingAddress.country,
+        }
       };
 
-      const order = await apiService.createOrder(orderData);
+      const session = await apiService.createCheckoutSession(checkoutData);
       
-      toast({
-        title: "Order Placed Successfully!",
-        description: `Order #${order.order_number} has been created.`,
-      });
-
-      clearCart();
-      setShowCheckout(false);
+      // Redirect to Stripe checkout
+      window.location.href = session.url;
+      
     } catch (error: any) {
       toast({
-        title: "Order Failed",
-        description: error.message || "Failed to place order. Please try again.",
+        title: "Payment Failed",
+        description: error.message || "Failed to process payment. Please try again.",
         variant: "destructive",
       });
     } finally {

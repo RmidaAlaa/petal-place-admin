@@ -9,6 +9,9 @@ import { FavoritesProvider } from "./contexts/FavoritesContext";
 import Marketplace from "./pages/Marketplace";
 import Admin from "./pages/Admin";
 import BouquetBuilder from "./pages/BouquetBuilderPage";
+import Partners from "./pages/Partners";
+import Success from "./pages/Success";
+import ImportProducts from "./pages/ImportProducts";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 
@@ -27,6 +30,9 @@ const App = () => (
                 <Route path="/" element={<Marketplace />} />
                 <Route path="/builder" element={<BouquetBuilder />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/partners" element={<Partners />} />
+                <Route path="/success" element={<Success />} />
+                <Route path="/import" element={<ImportProducts />} />
                 <Route path="/admin" element={<Admin />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />

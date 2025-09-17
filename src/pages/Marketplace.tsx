@@ -4,6 +4,8 @@ import Navigation from "@/components/Navigation";
 import HeroSection from "@/components/HeroSection";
 import ProductCard from "@/components/ProductCard";
 import ProductFilters, { FilterOptions } from "@/components/ProductFilters";
+import TopHighlights from "@/components/TopHighlights";
+import GeolocationNotice from "@/components/GeolocationNotice";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -181,6 +183,8 @@ const Marketplace = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
+      <GeolocationNotice />
+      <TopHighlights />
       <HeroSection />
       
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">

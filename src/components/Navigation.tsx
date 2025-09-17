@@ -75,13 +75,23 @@ const Navigation = () => {
               Occasions
             </Link>
             <Link 
-              to="/admin" 
+              to="/partners" 
               className={`text-sm font-medium transition-colors hover:text-primary ${
-                location.pathname === "/admin" ? "text-primary" : "text-muted-foreground"
+                location.pathname === "/partners" ? "text-primary" : "text-muted-foreground"
               }`}
             >
-              Admin
+              Partners
             </Link>
+            {authState.isAuthenticated && authState.user?.role === 'admin' && (
+              <Link 
+                to="/admin" 
+                className={`text-sm font-medium transition-colors hover:text-primary ${
+                  location.pathname === "/admin" ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                Admin
+              </Link>
+            )}
           </div>
 
           <div className="flex items-center space-x-4">
@@ -120,13 +130,27 @@ const Navigation = () => {
                       Profile Settings
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/partners">
+                      <User className="mr-2 h-4 w-4" />
+                      Partners
+                    </Link>
+                  </DropdownMenuItem>
                   {authState.user?.role === 'admin' && (
-                    <DropdownMenuItem asChild>
-                      <Link to="/admin">
-                        <User className="mr-2 h-4 w-4" />
-                        Admin Dashboard
-                      </Link>
-                    </DropdownMenuItem>
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin">
+                          <Settings className="mr-2 h-4 w-4" />
+                          Admin Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/import">
+                          <Settings className="mr-2 h-4 w-4" />
+                          Import Products
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
                   )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout}>

@@ -9,6 +9,15 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import productRoutes from './routes/products';
 import orderRoutes from './routes/orders';
+import partnerRoutes from './routes/partners';
+import locationRoutes from './routes/locations';
+import uploadRoutes from './routes/upload';
+import paymentRoutes from './routes/payments';
+import importRoutes from './routes/import';
+import orderTrackingRoutes from './routes/orderTracking';
+import inventoryRoutes from './routes/inventory';
+import reviewsRoutes from './routes/reviews';
+import searchRoutes from './routes/search';
 
 // Load environment variables
 dotenv.config();
@@ -53,6 +62,15 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/partners', partnerRoutes);
+app.use('/api/locations', locationRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/import', importRoutes);
+app.use('/api/order-tracking', orderTrackingRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/reviews', reviewsRoutes);
+app.use('/api/search', searchRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

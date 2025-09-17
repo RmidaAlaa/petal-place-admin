@@ -4,24 +4,29 @@ A comprehensive flower marketplace application with admin dashboard, built with 
 
 ## 🌸 Features
 
-### Frontend Features
-- **Modern UI/UX**: Built with React 18, TypeScript, and Tailwind CSS
-- **Authentication**: Complete user authentication with JWT tokens
-- **Admin Dashboard**: Real-time analytics and order management
-- **Product Management**: Full CRUD operations for products
-- **Bouquet Builder**: Interactive drag-and-drop bouquet creation
-- **Shopping Cart**: Persistent cart with context management
-- **Responsive Design**: Mobile-first responsive design
-- **Error Handling**: Comprehensive error boundaries and loading states
+### Core Features
+- **🔐 Authentication System**: Login, register, forgot password with role-based access
+- **👤 User Management**: Admin and user roles with profile management
+- **🛒 Shopping Cart**: Add to cart, checkout with Stripe payment integration
+- **💳 Payment Processing**: Stripe integration with webhook support
+- **📦 Product Management**: CRUD operations for products, categories, vendors
+- **🤝 Partners Management**: Manage business partners and suppliers
+- **📍 Location Services**: Automatic geolocation with user consent
+- **📸 Image Upload**: Product images, partner logos, user avatars
+- **📊 Admin Dashboard**: Analytics, order management, user overview
+- **🎨 Bouquet Builder**: Drag-and-drop bouquet creation tool
+- **⭐ Favorites System**: Save favorite products
+- **🔍 Search & Filters**: Advanced product filtering and search
+- **📱 Responsive Design**: Mobile-first design with Tailwind CSS
 
-### Backend Features
-- **RESTful API**: Express.js with TypeScript
-- **Database**: PostgreSQL with proper schema design
-- **Authentication**: JWT-based authentication with role-based access
-- **Security**: Helmet, CORS, rate limiting, input validation
-- **Real-time Data**: Live order and inventory updates
-- **File Upload**: Image upload for products
-- **Email Notifications**: Order confirmation and updates
+### Admin Features
+- **📈 Analytics Dashboard**: Sales metrics, order statistics, user analytics
+- **📋 Order Management**: View, update, and track orders
+- **👥 User Management**: Manage customer accounts and admin users
+- **📦 Product Import**: CSV import system for bulk product uploads
+- **🏪 Vendor Management**: Manage flower suppliers and vendors
+- **🤝 Partner Management**: Manage business partners
+- **🖼️ Media Management**: Upload and manage product images
 
 ## 🚀 Quick Start
 
@@ -81,6 +86,13 @@ A comprehensive flower marketplace application with admin dashboard, built with 
    - Frontend: http://localhost:5173
    - Backend API: http://localhost:3001
    - Admin Dashboard: http://localhost:5173/admin
+
+## 👥 Default Users
+
+The system comes with pre-configured users:
+
+- **Admin**: `admin@admin.com` / `0000`
+- **User**: `user@user.com` / `1111`
 
 ## 📁 Project Structure
 
