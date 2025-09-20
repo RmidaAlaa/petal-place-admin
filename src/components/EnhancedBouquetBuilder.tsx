@@ -231,7 +231,7 @@ export const EnhancedBouquetBuilder: React.FC = () => {
           <div className="lg:col-span-1">
             <Card className="border-border">
               <CardHeader>
-                <CardTitle className="text-foreground">Available Flowers</CardTitle>
+                <CardTitle className="text-foreground">{t('common.availableFlowers')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <FlowerInventory flowers={flowers} />
@@ -243,7 +243,7 @@ export const EnhancedBouquetBuilder: React.FC = () => {
           <div className="lg:col-span-2">
             <Card className="border-border">
               <CardHeader>
-                <CardTitle className="text-foreground">Design Your Bouquet</CardTitle>
+                <CardTitle className="text-foreground">{t('common.designBouquet')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>

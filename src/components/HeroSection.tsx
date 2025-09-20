@@ -1,25 +1,16 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "@/contexts/LanguageContext";
+import SearchBar from "./SearchBar";
 import heroImage from "@/assets/hero-flowers.jpg";
 
 const HeroSection = () => {
-  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
-  const handleSearch = () => {
-    if (searchQuery.trim()) {
-      // Navigate to marketplace with search query
-      navigate(`/?search=${encodeURIComponent(searchQuery.trim())}`);
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
+  const handleSearch = (query: string) => {
+    navigate(`/?search=${encodeURIComponent(query)}`);
   };
 
   const handleShopNow = () => {
@@ -42,9 +33,9 @@ const HeroSection = () => {
 
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl">
+        <div className="max-w-2xl animate-fade-in">
           <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
-            <span className="block text-primary">Roses Garden</span>
+            <span className="block text-primary gradient-text">Roses Garden</span>
             Fresh Flowers & Gifts
           </h1>
           
@@ -52,26 +43,17 @@ const HeroSection = () => {
             Premium natural roses, gift arrangements, and special occasion flowers. From wedding bouquets to birthday surprises - we make every moment beautiful.
           </p>
 
-          {/* Search Bar */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-8 max-w-md">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search flowers, arrangements..."
-                className="pl-10 h-12 bg-background/95 border-border"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={handleKeyPress}
-              />
-            </div>
-            <Button 
-              size="lg" 
-              className="h-12 px-8 bg-primary hover:bg-primary/90 text-primary-foreground"
-              onClick={handleSearch}
-            >
-              Search
-            </Button>
-          </div>
+                 {/* Search Bar */}
+                 <div className="mb-8 max-w-lg">
+                   <SearchBar
+                     placeholder={t('common.search')}
+                     onSearch={handleSearch}
+                     showSuggestions={true}
+                     showFilters={true}
+                     enableVoiceSearch={true}
+                     className="h-12"
+                   />
+                 </div>
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4">
@@ -81,7 +63,7 @@ const HeroSection = () => {
               className="bg-primary hover:bg-primary/90 text-primary-foreground"
               onClick={handleShopNow}
             >
-              Shop Now
+              {t('common.shopNow')}
             </Button>
             <Button 
               size="lg" 
@@ -89,7 +71,7 @@ const HeroSection = () => {
               className="border-border text-foreground hover:bg-sage hover:text-sage-foreground"
               onClick={handleBrowseCategories}
             >
-              Browse Categories
+              {t('common.browseCategories')}
             </Button>
           </div>
         </div>

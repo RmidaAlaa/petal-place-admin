@@ -81,9 +81,9 @@ const Categories = () => {
       
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4 text-foreground">Shop by Category</h1>
+          <h1 className="text-4xl font-bold mb-4 text-foreground">{t('common.shopByCategory')}</h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Discover our beautiful collection organized by occasions and flower types
+            {t('common.discoverCollection')}
           </p>
         </div>
 
@@ -109,7 +109,7 @@ const Categories = () => {
                 <div className="space-y-2">
                   <Link to={category.route}>
                     <Button variant="outline" className="w-full">
-                      Browse Category
+                      {t('common.browseCategory')}
                     </Button>
                   </Link>
                   
@@ -126,15 +126,14 @@ const Categories = () => {
 
         <div className="mt-12 bg-muted/50 rounded-lg p-8 text-center">
           <h2 className="text-2xl font-semibold mb-4 text-foreground">
-            Can't Find What You're Looking For?
+            {t('common.cantFind')}
           </h2>
           <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-            Create a completely custom bouquet or gift box with our interactive builder. 
-            Choose your flowers, colors, and arrangements exactly how you want them.
+            {t('common.createCustom')}
           </p>
           <Link to="/builder">
             <Button size="lg" className="bg-primary hover:bg-primary/90">
-              Start Custom Design
+              {t('common.startCustomDesign')}
             </Button>
           </Link>
         </div>

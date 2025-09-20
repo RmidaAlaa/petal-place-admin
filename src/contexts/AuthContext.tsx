@@ -1,21 +1,9 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import apiService from '../services/api';
-
-interface User {
-  id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  phone?: string;
-  role: 'customer' | 'vendor' | 'admin';
-  is_active: boolean;
-  email_verified: boolean;
-  created_at: string;
-}
+import { authService, User, LoginCredentials, RegisterData, PasswordResetData, PasswordUpdateData, ProfileUpdateData } from '../services/authService';
+import { useEmail } from './EmailContext';
 
 interface AuthState {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
@@ -31,7 +19,6 @@ type AuthAction =
 
 const initialState: AuthState = {
   user: null,
-  token: null,
   isAuthenticated: false,
   isLoading: true,
   error: null,
@@ -49,7 +36,6 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
       return {
         ...state,
         user: action.payload.user,
-        token: action.payload.token,
         isAuthenticated: true,
         isLoading: false,
         error: null,
@@ -58,7 +44,6 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
       return {
         ...state,
         user: null,
-        token: null,
         isAuthenticated: false,
         isLoading: false,
         error: action.payload,
@@ -67,7 +52,6 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
       return {
         ...state,
         user: null,
-        token: null,
         isAuthenticated: false,
         isLoading: false,
         error: null,
@@ -89,63 +73,61 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
 
 interface AuthContextType {
   state: AuthState;
-  login: (email: string, password: string) => Promise<void>;
-  register: (userData: {
-    email: string;
-    password: string;
-    first_name: string;
-    last_name: string;
-    phone?: string;
-    role?: string;
-  }) => Promise<void>;
-  logout: () => void;
-  updateProfile: (profileData: {
-    first_name?: string;
-    last_name?: string;
-    phone?: string;
-  }) => Promise<void>;
-  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  register: (userData: RegisterData) => Promise<void>;
+  socialLogin: (provider: 'google' | 'facebook') => Promise<void>;
+  logout: () => Promise<void>;
+  updateProfile: (profileData: ProfileUpdateData) => Promise<void>;
+  changePassword: (passwordData: PasswordUpdateData) => Promise<void>;
+  sendPasswordResetEmail: (data: PasswordResetData) => Promise<void>;
+  verifyEmail: (token: string) => Promise<void>;
   clearError: () => void;
+  refreshToken: () => Promise<string>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
+  const { sendWelcomeEmail, sendPasswordReset } = useEmail();
 
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          apiService.setToken(token);
-          const response = await apiService.getCurrentUser();
-          dispatch({
-            type: 'AUTH_SUCCESS',
-            payload: { user: (response as any).user, token },
-          });
-        } catch (error) {
-          console.error('Auth initialization failed:', error);
-          localStorage.removeItem('token');
-          dispatch({ type: 'AUTH_FAILURE', payload: 'Session expired' });
+      try {
+        dispatch({ type: 'AUTH_START' });
+        
+        if (authService.isAuthenticated()) {
+          const user = authService.getCurrentUser();
+          const token = authService.getAccessToken();
+          
+          if (user && token) {
+            dispatch({
+              type: 'AUTH_SUCCESS',
+              payload: { user, token },
+            });
+          } else {
+            dispatch({ type: 'AUTH_FAILURE', payload: 'Session expired' });
+          }
+        } else {
+          dispatch({ type: 'AUTH_FAILURE', payload: 'No active session' });
         }
-      } else {
-        dispatch({ type: 'AUTH_FAILURE', payload: 'No token found' });
+      } catch (error) {
+        console.error('Auth initialization failed:', error);
+        dispatch({ type: 'AUTH_FAILURE', payload: 'Session initialization failed' });
       }
     };
 
     initAuth();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (credentials: LoginCredentials) => {
     try {
       dispatch({ type: 'AUTH_START' });
-      const response = await apiService.login(email, password);
+      const response = await authService.login(credentials);
       
-      apiService.setToken((response as any).token);
       dispatch({
         type: 'AUTH_SUCCESS',
-        payload: { user: (response as any).user, token: (response as any).token },
+        payload: { user: response.user, token: response.token },
       });
     } catch (error: any) {
       dispatch({ type: 'AUTH_FAILURE', payload: error.message || 'Login failed' });
@@ -153,53 +135,104 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const register = async (userData: {
-    email: string;
-    password: string;
-    first_name: string;
-    last_name: string;
-    phone?: string;
-    role?: string;
-  }) => {
+  const register = async (userData: RegisterData) => {
     try {
       dispatch({ type: 'AUTH_START' });
-      const response = await apiService.register(userData);
+      const response = await authService.register(userData);
       
-      apiService.setToken((response as any).token);
       dispatch({
         type: 'AUTH_SUCCESS',
-        payload: { user: (response as any).user, token: (response as any).token },
+        payload: { user: response.user, token: response.token },
       });
+      
+      // Send welcome email
+      if (response.user) {
+        sendWelcomeEmail({
+          customerName: `${response.user.first_name} ${response.user.last_name}`,
+          customerEmail: response.user.email,
+          loginLink: `${window.location.origin}/profile`,
+        });
+      }
     } catch (error: any) {
       dispatch({ type: 'AUTH_FAILURE', payload: error.message || 'Registration failed' });
       throw error;
     }
   };
 
-  const logout = () => {
-    apiService.clearToken();
-    dispatch({ type: 'AUTH_LOGOUT' });
+  const socialLogin = async (provider: 'google' | 'facebook') => {
+    try {
+      dispatch({ type: 'AUTH_START' });
+      await authService.socialLogin(provider);
+    } catch (error: any) {
+      dispatch({ type: 'AUTH_FAILURE', payload: error.message || 'Social login failed' });
+      throw error;
+    }
   };
 
-  const updateProfile = async (profileData: {
-    first_name?: string;
-    last_name?: string;
-    phone?: string;
-  }) => {
+  const logout = async () => {
     try {
-      const response = await apiService.updateProfile(profileData);
-      dispatch({ type: 'UPDATE_USER', payload: (response as any).user });
+      await authService.logout();
+      dispatch({ type: 'AUTH_LOGOUT' });
+    } catch (error: any) {
+      dispatch({ type: 'AUTH_FAILURE', payload: error.message || 'Logout failed' });
+      throw error;
+    }
+  };
+
+  const updateProfile = async (profileData: ProfileUpdateData) => {
+    try {
+      const updatedUser = await authService.updateProfile(profileData);
+      dispatch({ type: 'UPDATE_USER', payload: updatedUser });
     } catch (error: any) {
       dispatch({ type: 'AUTH_FAILURE', payload: error.message || 'Profile update failed' });
       throw error;
     }
   };
 
-  const changePassword = async (currentPassword: string, newPassword: string) => {
+  const changePassword = async (passwordData: PasswordUpdateData) => {
     try {
-      await apiService.changePassword(currentPassword, newPassword);
+      await authService.updatePassword(passwordData);
     } catch (error: any) {
       dispatch({ type: 'AUTH_FAILURE', payload: error.message || 'Password change failed' });
+      throw error;
+    }
+  };
+
+  const sendPasswordResetEmail = async (data: PasswordResetData) => {
+    try {
+      await authService.sendPasswordResetEmail(data);
+      
+      // Send password reset email
+      sendPasswordReset({
+        customerName: data.email, // We don't have the name in this context
+        customerEmail: data.email,
+        resetLink: `${window.location.origin}/reset-password?token=${data.token}`,
+        expiresIn: '24 hours',
+      });
+    } catch (error: any) {
+      dispatch({ type: 'AUTH_FAILURE', payload: error.message || 'Password reset email failed' });
+      throw error;
+    }
+  };
+
+  const verifyEmail = async (token: string) => {
+    try {
+      await authService.verifyEmail(token);
+      const user = authService.getCurrentUser();
+      if (user) {
+        dispatch({ type: 'UPDATE_USER', payload: user });
+      }
+    } catch (error: any) {
+      dispatch({ type: 'AUTH_FAILURE', payload: error.message || 'Email verification failed' });
+      throw error;
+    }
+  };
+
+  const refreshToken = async () => {
+    try {
+      return await authService.refreshToken();
+    } catch (error: any) {
+      dispatch({ type: 'AUTH_FAILURE', payload: error.message || 'Token refresh failed' });
       throw error;
     }
   };
@@ -212,10 +245,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     state,
     login,
     register,
+    socialLogin,
     logout,
     updateProfile,
     changePassword,
+    sendPasswordResetEmail,
+    verifyEmail,
     clearError,
+    refreshToken,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

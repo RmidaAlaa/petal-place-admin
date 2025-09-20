@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Grid3X3, List } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import rosesBouquet from "@/assets/roses-bouquet.jpg";
 import whitePeonies from "@/assets/white-peonies.jpg";
 import springWildflowers from "@/assets/spring-wildflowers.jpg";
@@ -17,6 +18,7 @@ import springWildflowers from "@/assets/spring-wildflowers.jpg";
 const Marketplace = () => {
   const [searchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const { t } = useLanguage();
   const [filters, setFilters] = useState<FilterOptions>({
     search: '',
     categories: [],
@@ -190,7 +192,7 @@ const Marketplace = () => {
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Categories Section */}
         <section className="mb-12">
-          <h2 className="text-2xl font-bold text-foreground mb-6">Shop by Category</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-6">{t('common.shopByCategory')}</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {categories.map((category, index) => (
               <Card key={index} className="cursor-pointer hover:shadow-md transition-shadow bg-card border-border/50">
@@ -222,10 +224,10 @@ const Marketplace = () => {
             </p>
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="bg-sage text-sage-foreground">
-                Fresh Today
+                {t('common.freshToday')}
               </Badge>
               <Badge variant="secondary" className="bg-coral text-coral-foreground">
-                Best Sellers
+                {t('common.bestSellers')}
               </Badge>
             </div>
           </div>
@@ -252,18 +254,18 @@ const Marketplace = () => {
         <section>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-foreground">
-              {filters.search ? `Search Results for "${filters.search}"` : 'Featured Flowers'}
+              {filters.search ? `${t('common.searchResults')} "${filters.search}"` : t('common.featuredFlowers')}
             </h2>
             {filteredProducts.length > 0 && (
               <Button variant="outline" className="border-border text-foreground">
-                View All ({filteredProducts.length})
+                {t('common.viewAll')} ({filteredProducts.length})
               </Button>
             )}
           </div>
           
           {filteredProducts.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-lg text-muted-foreground mb-4">No products match your current filters</p>
+              <p className="text-lg text-muted-foreground mb-4">{t('common.noResults')}</p>
               <Button 
                 variant="outline" 
                 onClick={() => setFilters({
@@ -277,7 +279,7 @@ const Marketplace = () => {
                 })}
                 className="border-border text-foreground"
               >
-                Clear All Filters
+                {t('common.clearFilters')}
               </Button>
             </div>
           ) : (
@@ -296,7 +298,7 @@ const Marketplace = () => {
         {/* Load More */}
         <div className="text-center mt-12">
           <Button size="lg" variant="outline" className="border-border text-foreground hover:bg-sage hover:text-sage-foreground">
-            Load More Products
+            {t('common.loadMore')}
           </Button>
         </div>
       </main>

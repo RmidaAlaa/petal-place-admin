@@ -5,7 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Heart, Star, Eye } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useFavorites } from "@/contexts/FavoritesContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 import ProductDetailModal, { Product } from "@/components/ProductDetailModal";
 
 interface ProductCardProps {
@@ -36,9 +39,12 @@ const ProductCard = ({
   description,
 }: ProductCardProps) => {
   const [showModal, setShowModal] = useState(false);
-  const { addItem } = useCart();
+  const { addItemAsync } = useCart();
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
+  const { t } = useLanguage();
+  const { formatPrice } = useCurrency();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const product: Product = {
     id,
@@ -64,22 +70,37 @@ const ProductCard = ({
     stock: Math.floor(Math.random() * 20) + 5
   };
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const handleAddToCart = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    addItem({
-      id: `${id}-${Date.now()}`,
-      name,
-      price,
-      image,
-      type: 'product',
-      vendor,
-      category,
-    });
-    
-    toast({
-      title: "Added to Cart",
-      description: `${name} has been added to your cart.`,
-    });
+    try {
+      await addItemAsync(
+        id,
+        1,
+        undefined,
+        undefined,
+        {
+          name,
+          price,
+          image,
+          sku: `SKU-${id}`,
+        }
+      );
+      toast({
+        title: "Added to Cart",
+        description: `${name} has been added to your cart.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add item to cart",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleViewDetails = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/product/${id}`);
   };
 
   const handleLike = (e: React.MouseEvent) => {
@@ -109,8 +130,8 @@ const ProductCard = ({
   return (
     <>
       <Card 
-        className="group overflow-hidden bg-card hover:shadow-lg transition-all duration-300 border-border/50 cursor-pointer"
-        onClick={() => setShowModal(true)}
+        className="group overflow-hidden bg-card hover:shadow-lg transition-all duration-300 border-border/50 cursor-pointer hover-lift animate-fade-in"
+        onClick={handleViewDetails}
       >
         <div className="relative overflow-hidden">
           <img
@@ -169,20 +190,28 @@ const ProductCard = ({
           )}
 
           <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-primary">{price} SAR</span>
+            <span className="text-lg font-bold text-primary">{formatPrice(price)}</span>
             {originalPrice && (
-              <span className="text-sm text-muted-foreground line-through">{originalPrice} SAR</span>
+              <span className="text-sm text-muted-foreground line-through">{formatPrice(originalPrice)}</span>
             )}
           </div>
         </div>
       </CardContent>
 
-      <CardFooter className="p-4 pt-0">
+      <CardFooter className="p-4 pt-0 space-y-2">
         <Button 
           className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
           onClick={handleAddToCart}
         >
-          Add to Cart
+          {t('common.addToCart')}
+        </Button>
+        <Button 
+          variant="outline"
+          className="w-full"
+          onClick={handleViewDetails}
+        >
+          <Eye className="h-4 w-4 mr-2" />
+          View Details
         </Button>
       </CardFooter>
     </Card>

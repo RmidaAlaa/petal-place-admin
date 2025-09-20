@@ -10,10 +10,16 @@ import { WishlistProvider } from "./contexts/WishlistContext";
 import { RecentlyViewedProvider } from "./contexts/RecentlyViewedContext";
 import { CurrencyProvider } from "./contexts/CurrencyContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
+import { EmailProvider } from "./contexts/EmailContext";
+import { ReviewProvider } from "./contexts/ReviewContext";
+import ErrorBoundary from "./components/ErrorBoundary";
 import Marketplace from "./pages/Marketplace";
 import Admin from "./pages/Admin";
 import BouquetBuilder from "./pages/BouquetBuilderPage";
 import Categories from "./pages/Categories";
+import ProductDetailPage from "./pages/ProductDetailPage";
+import CheckoutPage from "./pages/CheckoutPage";
+import SearchResults from "./pages/SearchResults";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import WishlistPage from "./components/WishlistPage";
@@ -21,45 +27,72 @@ import Occasions from "./pages/Occasions";
 import GiftBoxes from "./pages/GiftBoxes";
 import Partners from "./pages/Partners";
 import Success from "./pages/Success";
+import CartSidebar from "./components/CartSidebar";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <LanguageProvider>
-      <CurrencyProvider>
-        <AuthProvider>
-          <FavoritesProvider>
-            <WishlistProvider>
-              <RecentlyViewedProvider>
-                <CartProvider>
-                  <TooltipProvider>
-                    <Toaster />
-                    <Sonner />
-                    <BrowserRouter>
-                      <Routes>
-                        <Route path="/" element={<Marketplace />} />
-                        <Route path="/builder" element={<BouquetBuilder />} />
-                        <Route path="/categories" element={<Categories />} />
-                        <Route path="/profile" element={<Profile />} />
-                        <Route path="/wishlist" element={<WishlistPage />} />
-                        <Route path="/occasions" element={<Occasions />} />
-                        <Route path="/gift-boxes" element={<GiftBoxes />} />
-                        <Route path="/partners" element={<Partners />} />
-                        <Route path="/success" element={<Success />} />
-                        <Route path="/admin" element={<Admin />} />
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
-                    </BrowserRouter>
-                  </TooltipProvider>
-                </CartProvider>
-              </RecentlyViewedProvider>
-            </WishlistProvider>
-          </FavoritesProvider>
-        </AuthProvider>
-      </CurrencyProvider>
-    </LanguageProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <LanguageProvider>
+            <CurrencyProvider>
+              <AuthProvider>
+                <FavoritesProvider>
+                  <WishlistProvider>
+                    <RecentlyViewedProvider>
+                      <CartProvider>
+                        <EmailProvider>
+                          <ReviewProvider>
+                            <TooltipProvider>
+                              <Toaster />
+                              <Sonner />
+                              <BrowserRouter>
+                              <Routes>
+                                <Route path="/" element={<Marketplace />} />
+                                <Route path="/search" element={<SearchResults />} />
+                                <Route path="/product/:id" element={<ProductDetailPage />} />
+                                <Route path="/builder" element={<BouquetBuilder />} />
+                                <Route path="/categories" element={<Categories />} />
+                                <Route path="/checkout" element={
+                                  <ProtectedRoute>
+                                    <CheckoutPage />
+                                  </ProtectedRoute>
+                                } />
+                                <Route path="/profile" element={
+                                  <ProtectedRoute>
+                                    <Profile />
+                                  </ProtectedRoute>
+                                } />
+                                <Route path="/wishlist" element={
+                                  <ProtectedRoute>
+                                    <WishlistPage />
+                                  </ProtectedRoute>
+                                } />
+                                <Route path="/occasions" element={<Occasions />} />
+                                <Route path="/gift-boxes" element={<GiftBoxes />} />
+                                <Route path="/partners" element={<Partners />} />
+                                <Route path="/success" element={<Success />} />
+                                <Route path="/admin" element={
+                                  <ProtectedRoute requiredRole="admin">
+                                    <Admin />
+                                  </ProtectedRoute>
+                                } />
+                                <Route path="*" element={<NotFound />} />
+                              </Routes>
+                            </BrowserRouter>
+                          </TooltipProvider>
+                          </ReviewProvider>
+                        </EmailProvider>
+                      </CartProvider>
+                    </RecentlyViewedProvider>
+                  </WishlistProvider>
+                </FavoritesProvider>
+              </AuthProvider>
+            </CurrencyProvider>
+          </LanguageProvider>
+        </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
