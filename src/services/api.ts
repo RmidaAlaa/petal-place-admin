@@ -304,6 +304,86 @@ class ApiService {
       body: JSON.stringify(refundData),
     });
   }
+
+  // Partners API
+  async getPartners() {
+    return this.request('/partners');
+  }
+
+  async createPartner(data: any) {
+    return this.request('/partners', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updatePartner(id: string, data: any) {
+    return this.request(`/partners/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deletePartner(id: string) {
+    return this.request(`/partners/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Search History API
+  async getSearchHistory() {
+    return this.request('/search/history');
+  }
+
+  async clearSearchHistory() {
+    return this.request('/search/history', {
+      method: 'DELETE',
+    });
+  }
+
+  // Location API
+  async getUserLocation() {
+    return this.request('/user/location');
+  }
+
+  async updateUserLocation(location: any) {
+    return this.request('/user/location', {
+      method: 'PUT',
+      body: JSON.stringify(location),
+    });
+  }
+
+  // Reviews API
+  async createReview(data: any) {
+    return this.request('/reviews', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async markReviewHelpful(id: string) {
+    return this.request(`/reviews/${id}/helpful`, {
+      method: 'POST',
+    });
+  }
+
+  // Payment API
+  async confirmPayment(data: any) {
+    return this.request('/payments/confirm', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // User Profile API
+  async getUserProfile() {
+    return this.request('/user/profile');
+  }
+
+  // Top Products API
+  async getTopProducts() {
+    return this.request('/products/top');
+  }
 }
 
 export const apiService = new ApiService(API_BASE_URL);

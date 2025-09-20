@@ -49,7 +49,7 @@ const UserProfile = () => {
         apiService.getMyOrders(10, 0),
         // Add other API calls for favorites, etc.
       ]);
-      setOrders(ordersData);
+      setOrders(ordersData as any[]);
     } catch (error) {
       console.error('Failed to load user data:', error);
     }

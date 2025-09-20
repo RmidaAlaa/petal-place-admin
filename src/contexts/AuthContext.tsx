@@ -122,7 +122,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const response = await apiService.getCurrentUser();
           dispatch({
             type: 'AUTH_SUCCESS',
-            payload: { user: response.user, token },
+            payload: { user: (response as any).user, token },
           });
         } catch (error) {
           console.error('Auth initialization failed:', error);
@@ -142,10 +142,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       dispatch({ type: 'AUTH_START' });
       const response = await apiService.login(email, password);
       
-      apiService.setToken(response.token);
+      apiService.setToken((response as any).token);
       dispatch({
         type: 'AUTH_SUCCESS',
-        payload: { user: response.user, token: response.token },
+        payload: { user: (response as any).user, token: (response as any).token },
       });
     } catch (error: any) {
       dispatch({ type: 'AUTH_FAILURE', payload: error.message || 'Login failed' });
@@ -165,10 +165,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       dispatch({ type: 'AUTH_START' });
       const response = await apiService.register(userData);
       
-      apiService.setToken(response.token);
+      apiService.setToken((response as any).token);
       dispatch({
         type: 'AUTH_SUCCESS',
-        payload: { user: response.user, token: response.token },
+        payload: { user: (response as any).user, token: (response as any).token },
       });
     } catch (error: any) {
       dispatch({ type: 'AUTH_FAILURE', payload: error.message || 'Registration failed' });
@@ -188,7 +188,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }) => {
     try {
       const response = await apiService.updateProfile(profileData);
-      dispatch({ type: 'UPDATE_USER', payload: response.user });
+      dispatch({ type: 'UPDATE_USER', payload: (response as any).user });
     } catch (error: any) {
       dispatch({ type: 'AUTH_FAILURE', payload: error.message || 'Profile update failed' });
       throw error;

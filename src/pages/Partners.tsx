@@ -52,7 +52,8 @@ const Partners = () => {
   const loadPartners = async () => {
     try {
       setIsLoading(true);
-        const mockPartners: Partner[] = [
+      const response = await apiService.getPartners();
+      setPartners(response as Partner[]);
     } catch (error: any) {
       toast({
         title: 'Error',

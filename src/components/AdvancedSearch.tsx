@@ -98,8 +98,8 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onResults, onLoading })
 
   const loadSearchHistory = async () => {
     try {
-      const data = await apiService.getSearchHistory(10);
-      setSearchHistory(data);
+      const data = await apiService.getSearchHistory();
+      setSearchHistory(data as any[]);
     } catch (error) {
       // Silently fail for history
     }

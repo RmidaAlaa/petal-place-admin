@@ -110,8 +110,8 @@ const GiftBoxes = () => {
         id: giftBox.id,
         name: giftBox.name,
         price: giftBox.price,
-        image: giftBox.image,
-        category: giftBox.category,
+        image_url: giftBox.image_url,
+        description: giftBox.description || '',
       });
       toast({
         title: "Added to Wishlist",

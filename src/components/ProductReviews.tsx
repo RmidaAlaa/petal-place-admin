@@ -95,7 +95,7 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({ productId, productName 
         sort_order: sortOrder
       };
       
-      const data = await apiService.getProductReviews(productId, params);
+      const data = await apiService.getProductReviews(productId, params) as { reviews: any[], statistics: any };
       setReviews(data.reviews);
       setStats(data.statistics);
     } catch (error: any) {

@@ -66,9 +66,9 @@ const Admin = () => {
         apiService.getLowStockProducts()
       ]);
 
-      setStats(statsData);
-      setRecentOrders(ordersData);
-      setLowStockProducts(lowStockData);
+      setStats(statsData as any);
+      setRecentOrders(ordersData as any);
+      setLowStockProducts(lowStockData as any);
     } catch (err: any) {
       setError(err.message || 'Failed to load dashboard data');
       toast({

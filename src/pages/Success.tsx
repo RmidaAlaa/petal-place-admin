@@ -26,7 +26,7 @@ const Success = () => {
     try {
       setIsLoading(true);
       const result = await apiService.confirmPayment(sessionId!);
-      setOrder(result.order);
+      setOrder((result as any).order);
       
       toast({
         title: 'Payment Successful!',

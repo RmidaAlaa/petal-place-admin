@@ -47,8 +47,8 @@ const TopHighlights: React.FC = () => {
         limit: 4 
       });
       
-      setFeaturedProducts(featuredData.products || []);
-      setPromoProducts(promoData.products?.filter(p => p.original_price && p.original_price > p.price) || []);
+      setFeaturedProducts((featuredData as { products: any[] }).products || []);
+      setPromoProducts((promoData as { products: any[] }).products?.filter(p => p.original_price && p.original_price > p.price) || []);
     } catch (error) {
       console.error('Failed to load highlights:', error);
     } finally {
