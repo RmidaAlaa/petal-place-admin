@@ -1,12 +1,12 @@
 import React from 'react';
 import Navigation from '@/components/Navigation';
-import { BouquetBuilder } from '@/components/BouquetBuilder';
+import { EnhancedBouquetBuilder } from '@/components/EnhancedBouquetBuilder';
 
 const BouquetBuilderPage: React.FC = () => {
   return (
     <div>
       <Navigation />
-      <BouquetBuilder />
+      <EnhancedBouquetBuilder />
     </div>
   );
 };

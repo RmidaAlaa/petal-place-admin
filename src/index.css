@@ -8,25 +8,25 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 355 25% 97%;
-    --foreground: 155 25% 15%;
+    --background: 120 25% 96%;
+    --foreground: 340 25% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 155 25% 15%;
+    --card-foreground: 340 25% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 155 25% 15%;
+    --popover-foreground: 340 25% 15%;
 
     --primary: 340 75% 55%;
     --primary-foreground: 0 0% 98%;
 
-    --secondary: 125 25% 85%;
-    --secondary-foreground: 155 35% 25%;
+    --secondary: 120 25% 85%;
+    --secondary-foreground: 340 35% 25%;
 
     --muted: 120 15% 92%;
-    --muted-foreground: 155 15% 45%;
+    --muted-foreground: 340 15% 45%;
 
-    --accent: 15 85% 70%;
+    --accent: 340 85% 70%;
     --accent-foreground: 0 0% 98%;
 
     --destructive: 0 84.2% 60.2%;
@@ -36,13 +36,17 @@ All colors MUST be HSL.
     --input: 120 15% 90%;
     --ring: 340 75% 55%;
 
-    /* Custom floral design tokens */
-    --sage: 125 25% 75%;
-    --sage-foreground: 155 35% 25%;
-    --coral: 15 85% 70%;
+    /* Custom floral design tokens inspired by Roses Garden logo */
+    --sage: 120 25% 65%;
+    --sage-foreground: 340 35% 25%;
+    --coral: 340 85% 70%;
     --coral-foreground: 0 0% 98%;
     --cream: 45 30% 95%;
-    --cream-foreground: 155 25% 20%;
+    --cream-foreground: 340 25% 20%;
+    --rose-pink: 340 75% 55%;
+    --rose-pink-foreground: 0 0% 98%;
+    --garden-green: 120 25% 65%;
+    --garden-green-foreground: 340 35% 25%;
 
     /* Gradients */
     --gradient-floral: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);

@@ -1,10 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Flower2, ShoppingBag, User, LogOut, Settings } from "lucide-react";
+import { ShoppingBag, User, LogOut, Settings, Globe, Coins } from "lucide-react";
 import CartSidebar from "@/components/CartSidebar";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { AuthModal } from "@/components/AuthModal";
 import { useState } from "react";
 import {
@@ -14,22 +16,26 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import logoImage from "@/assets/roses-garden-logo.jpg";
 
 const Navigation = () => {
   const location = useLocation();
   const { state } = useCart();
   const { state: authState, logout } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
+  const { currency, setCurrency } = useCurrency();
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center space-x-2">
-            <Flower2 className="h-8 w-8 text-primary" />
+          <Link to="/" className="flex items-center space-x-3">
+            <img src={logoImage} alt="Roses Garden" className="h-10 w-10 object-cover rounded-full" />
             <div className="flex flex-col">
               <span className="text-lg font-bold text-foreground">Roses Garden</span>
-              <span className="text-xs text-muted-foreground">حديقة الأزهار</span>
+              <span className="text-xs text-muted-foreground">Your Joy is Roses</span>
             </div>
           </Link>
 
@@ -40,7 +46,7 @@ const Navigation = () => {
                 location.pathname === "/" ? "text-primary" : "text-muted-foreground"
               }`}
             >
-              Marketplace
+              {t('nav.marketplace')}
             </Link>
             <Link 
               to="/builder" 
@@ -48,15 +54,15 @@ const Navigation = () => {
                 location.pathname === "/builder" ? "text-primary" : "text-muted-foreground"
               }`}
             >
-              Bouquet Builder
+              {t('nav.bouquetBuilder')}
             </Link>
             <Link 
-              to="/natural-roses" 
+              to="/categories" 
               className={`text-sm font-medium transition-colors hover:text-primary ${
-                location.pathname === "/natural-roses" ? "text-primary" : "text-muted-foreground"
+                location.pathname === "/categories" ? "text-primary" : "text-muted-foreground"
               }`}
             >
-              Natural Roses
+              Categories
             </Link>
             <Link 
               to="/gift-boxes" 
@@ -64,7 +70,7 @@ const Navigation = () => {
                 location.pathname === "/gift-boxes" ? "text-primary" : "text-muted-foreground"
               }`}
             >
-              Gift Boxes
+              {t('nav.giftBoxes')}
             </Link>
             <Link 
               to="/occasions" 
@@ -72,7 +78,7 @@ const Navigation = () => {
                 location.pathname === "/occasions" ? "text-primary" : "text-muted-foreground"
               }`}
             >
-              Occasions
+              {t('nav.occasions')}
             </Link>
             <Link 
               to="/partners" 
@@ -80,7 +86,7 @@ const Navigation = () => {
                 location.pathname === "/partners" ? "text-primary" : "text-muted-foreground"
               }`}
             >
-              Partners
+              {t('nav.partners')}
             </Link>
             {authState.isAuthenticated && authState.user?.role === 'admin' && (
               <Link 
@@ -95,6 +101,30 @@ const Navigation = () => {
           </div>
 
           <div className="flex items-center space-x-4">
+            {/* Language Selector */}
+            <Select value={language} onValueChange={setLanguage}>
+              <SelectTrigger className="w-16 h-8 border-none">
+                <Globe className="h-4 w-4" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">EN</SelectItem>
+                <SelectItem value="ar">AR</SelectItem>
+                <SelectItem value="fr">FR</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Currency Selector */}
+            <Select value={currency} onValueChange={setCurrency}>
+              <SelectTrigger className="w-20 h-8 border-none">
+                <Coins className="h-4 w-4" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="USD">USD</SelectItem>
+                <SelectItem value="SAR">SAR</SelectItem>
+                <SelectItem value="EUR">EUR</SelectItem>
+              </SelectContent>
+            </Select>
+
             <CartSidebar>
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingBag className="h-5 w-5" />
@@ -166,7 +196,7 @@ const Navigation = () => {
                 onClick={() => setShowAuthModal(true)}
               >
                 <User className="h-4 w-4 mr-2" />
-                Sign In
+                {t('nav.signIn')}
               </Button>
             )}
           </div>

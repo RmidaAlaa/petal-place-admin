@@ -6,7 +6,7 @@ export interface CartItem {
   price: number;
   image: string;
   quantity: number;
-  type: 'product' | 'bouquet';
+  type: 'product' | 'bouquet' | 'custom-bouquet';
   vendor?: string;
   category?: string;
 }
