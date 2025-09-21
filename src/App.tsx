@@ -27,6 +27,9 @@ import Occasions from "./pages/Occasions";
 import GiftBoxes from "./pages/GiftBoxes";
 import Partners from "./pages/Partners";
 import Success from "./pages/Success";
+import ImportProducts from "./pages/ImportProducts";
+import Login from "./pages/Login";
+import ContactUs from "./pages/ContactUs";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -71,12 +74,21 @@ const App = () => (
                               <Route path="/occasions" element={<Occasions />} />
                               <Route path="/gift-boxes" element={<GiftBoxes />} />
                               <Route path="/partners" element={<Partners />} />
+                              <Route path="/contact" element={<ContactUs />} />
                               <Route path="/success" element={<Success />} />
                               <Route path="/admin" element={
                                 <ProtectedRoute requiredRole="admin">
                                   <Admin />
                                 </ProtectedRoute>
                               } />
+                              <Route path="/import" element={
+                                <ProtectedRoute requiredRole="admin">
+                                  <ImportProducts />
+                                </ProtectedRoute>
+                              } />
+                              <Route path="/login" element={<Login />} />
+                              {/* Temporary admin access for development */}
+                              <Route path="/admin-dev" element={<Admin />} />
                               <Route path="*" element={<NotFound />} />
                             </Routes>
                           </BrowserRouter>

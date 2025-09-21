@@ -90,17 +90,25 @@ const Navigation = () => {
             >
               {t('nav.occasions')}
             </Link>
-            <Link 
-              to="/partners" 
+            <Link
+              to="/partners"
               className={`text-sm font-medium transition-colors hover:text-primary ${
                 location.pathname === "/partners" ? "text-primary" : "text-muted-foreground"
               }`}
             >
               {t('nav.partners')}
             </Link>
+            <Link
+              to="/contact"
+              className={`text-sm font-medium transition-colors hover:text-primary ${
+                location.pathname === "/contact" ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              Contact Us
+            </Link>
             {authState.isAuthenticated && authState.user?.role === 'admin' && (
-              <Link 
-                to="/admin" 
+              <Link
+                to="/admin"
                 className={`text-sm font-medium transition-colors hover:text-primary ${
                   location.pathname === "/admin" ? "text-primary" : "text-muted-foreground"
                 }`}

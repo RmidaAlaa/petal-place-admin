@@ -35,6 +35,7 @@ const MobileMenu = () => {
     { path: '/gift-boxes', label: t('nav.giftBoxes') },
     { path: '/occasions', label: t('nav.occasions') },
     { path: '/partners', label: t('nav.partners') },
+    { path: '/contact', label: t('nav.contact') },
   ];
 
   const isActive = (path: string) => location.pathname === path;
