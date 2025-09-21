@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -80,6 +82,32 @@ const SearchBar: React.FC<SearchBarProps> = ({
     ]);
   }, []);
 
+  const performSearch = useCallback(async (searchQuery: string) => {
+    if (!showSuggestions) return;
+
+    try {
+      setIsLoading(true);
+      const products = await productService.searchProducts(searchQuery, 5);
+
+      const productSuggestions: SearchSuggestion[] = products.map(product => ({
+        id: product.id,
+        type: 'product',
+        title: product.name,
+        subtitle: product.category,
+        image: product.images[0],
+        price: product.price,
+        category: product.category
+      }));
+
+      setSuggestions(productSuggestions);
+    } catch (error) {
+      console.error('Search error:', error);
+      setSuggestions([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [showSuggestions]);
+
   // Debounced search
   useEffect(() => {
     if (debounceRef.current) {
@@ -99,33 +127,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         clearTimeout(debounceRef.current);
       }
     };
-  }, [query]);
-
-  const performSearch = async (searchQuery: string) => {
-    if (!showSuggestions) return;
-
-    try {
-      setIsLoading(true);
-      const products = await productService.searchProducts(searchQuery, 5);
-      
-      const productSuggestions: SearchSuggestion[] = products.map(product => ({
-        id: product.id,
-        type: 'product',
-        title: product.name,
-        subtitle: product.category,
-        image: product.images[0],
-        price: product.price,
-        category: product.category
-      }));
-
-      setSuggestions(productSuggestions);
-    } catch (error) {
-      console.error('Search error:', error);
-      setSuggestions([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [query, performSearch]);
 
   // Voice search functionality
   const startVoiceSearch = () => {

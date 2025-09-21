@@ -63,7 +63,7 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({
 
   useEffect(() => {
     loadProductReviews(productId);
-  }, [productId]);
+  }, [productId, loadProductReviews]);
 
   useEffect(() => {
     const filters: any = {};
@@ -72,10 +72,10 @@ const ProductReviews: React.FC<ProductReviewsProps> = ({
     if (showVerifiedOnly) filters.verified = true;
     if (showImagesOnly) filters.hasImages = true;
     filters.sortBy = sortBy;
-    
+
     setFilters(filters);
     loadProductReviews(productId);
-  }, [searchTerm, ratingFilter, showVerifiedOnly, showImagesOnly, sortBy]);
+  }, [searchTerm, ratingFilter, showVerifiedOnly, showImagesOnly, sortBy, loadProductReviews, productId, setFilters]);
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
