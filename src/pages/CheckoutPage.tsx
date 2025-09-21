@@ -587,7 +587,7 @@ const CheckoutPage: React.FC = () => {
                           <Checkbox
                             id="save_payment"
                             checked={savePaymentMethod}
-                            onCheckedChange={setSavePaymentMethod}
+                            onCheckedChange={(checked) => setSavePaymentMethod(checked === true)}
                           />
                           <Label htmlFor="save_payment" className="text-sm">
                             Save this payment method for future purchases

@@ -206,7 +206,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       sendPasswordReset({
         customerName: data.email, // We don't have the name in this context
         customerEmail: data.email,
-        resetLink: `${window.location.origin}/reset-password?token=${data.token}`,
+        resetLink: `${window.location.origin}/reset-password`,
         expiresIn: '24 hours',
       });
     } catch (error: any) {

@@ -262,7 +262,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ children }) => {
                     size="sm"
                   >
                     {isApplyingCoupon ? (
-                      <LoadingSpinner size="small" />
+                      <LoadingSpinner size="sm" />
                     ) : appliedCoupon ? (
                       <CheckCircle className="h-4 w-4" />
                     ) : (
