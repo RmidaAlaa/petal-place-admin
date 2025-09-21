@@ -64,7 +64,7 @@ const WishlistPage = () => {
             <CardHeader className="p-0">
               <div className="relative aspect-square overflow-hidden rounded-t-lg">
                 <img
-                  src={product.image_url}
+                  src={product.image_url || product.image}
                   alt={product.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
