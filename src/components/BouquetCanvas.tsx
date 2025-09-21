@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react';
 import { useDroppable } from '@dnd-kit/core';
+import { useDraggable } from '@dnd-kit/core';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BouquetItem } from './BouquetBuilder';
@@ -17,35 +18,35 @@ const FlowerElement: React.FC<{
   onRemove: () => void;
   onUpdate: (updates: Partial<BouquetItem>) => void;
 }> = ({ item, onRemove, onUpdate }) => {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: `canvas-${item.canvasId}`,
+    data: {
+      type: 'canvas-item',
+      item,
+    },
+  });
+
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0) rotate(${item.rotation}deg) scale(${item.scale})`,
+  } : {
+    transform: `rotate(${item.rotation}deg) scale(${item.scale})`,
+  };
+
   return (
     <div
-      className="absolute group cursor-move select-none"
+      ref={setNodeRef}
+      className={cn(
+        "absolute group cursor-move select-none",
+        isDragging && "z-50"
+      )}
       style={{
         left: item.x,
         top: item.y,
-        transform: `rotate(${item.rotation}deg) scale(${item.scale})`,
         transformOrigin: 'center',
+        ...style,
       }}
-      onMouseDown={(e) => {
-        e.preventDefault();
-        const startX = e.clientX - item.x;
-        const startY = e.clientY - item.y;
-
-        const handleMouseMove = (e: MouseEvent) => {
-          onUpdate({
-            x: e.clientX - startX,
-            y: e.clientY - startY,
-          });
-        };
-
-        const handleMouseUp = () => {
-          document.removeEventListener('mousemove', handleMouseMove);
-          document.removeEventListener('mouseup', handleMouseUp);
-        };
-
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-      }}
+      {...listeners}
+      {...attributes}
     >
       {/* Flower representation */}
       <div 

@@ -10,7 +10,7 @@ import emailService, {
 } from '@/services/emailService';
 import { useToast } from '@/hooks/use-toast';
 
-interface EmailContextType {
+export interface EmailContextType {
   sendOrderConfirmation: (data: OrderConfirmationData) => Promise<boolean>;
   sendPasswordReset: (data: PasswordResetData) => Promise<boolean>;
   sendWelcomeEmail: (data: WelcomeData) => Promise<boolean>;

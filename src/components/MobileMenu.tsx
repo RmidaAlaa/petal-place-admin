@@ -113,7 +113,6 @@ const MobileMenu = () => {
                   <SelectContent>
                     <SelectItem value="en">EN</SelectItem>
                     <SelectItem value="ar">AR</SelectItem>
-                    <SelectItem value="fr">FR</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -125,7 +124,6 @@ const MobileMenu = () => {
                   <SelectContent>
                     <SelectItem value="USD">USD</SelectItem>
                     <SelectItem value="SAR">SAR</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

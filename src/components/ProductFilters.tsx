@@ -28,10 +28,6 @@ interface ProductFiltersProps {
 const ProductFilters = ({ filters, onFiltersChange, categories }: ProductFiltersProps) => {
   const [localFilters, setLocalFilters] = useState<FilterOptions>(filters);
 
-  const applyFilters = () => {
-    onFiltersChange(localFilters);
-  };
-
   const resetFilters = () => {
     const defaultFilters: FilterOptions = {
       search: '',
@@ -47,7 +43,9 @@ const ProductFilters = ({ filters, onFiltersChange, categories }: ProductFilters
   };
 
   const updateFilter = <K extends keyof FilterOptions>(key: K, value: FilterOptions[K]) => {
-    setLocalFilters(prev => ({ ...prev, [key]: value }));
+    const newFilters = { ...localFilters, [key]: value };
+    setLocalFilters(newFilters);
+    onFiltersChange(newFilters);
   };
 
   const toggleCategory = (category: string) => {
@@ -235,11 +233,8 @@ const ProductFilters = ({ filters, onFiltersChange, categories }: ProductFilters
             </div>
 
             <div className="space-y-2">
-              <Button onClick={applyFilters} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-                Apply Filters
-              </Button>
               <Button onClick={resetFilters} variant="outline" className="w-full border-border text-foreground">
-                Reset All
+                Reset All Filters
               </Button>
             </div>
           </SheetContent>

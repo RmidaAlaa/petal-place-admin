@@ -30,20 +30,26 @@ const Navigation = () => {
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <MobileMenu />
-            <Link to="/" className="flex items-center space-x-3">
-              <img src={logoImage} alt="Roses Garden" className="h-10 w-10 object-cover rounded-full" />
+      <div className="container mx-auto px-2 sm:px-4 lg:px-8">
+        <div className="flex h-14 sm:h-16 items-center justify-between">
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            <div className="block sm:hidden">
+              <MobileMenu />
+            </div>
+            <Link to="/" className="flex items-center space-x-2 sm:space-x-3">
+              <img 
+                src={logoImage} 
+                alt="Roses Garden" 
+                className="h-8 w-8 sm:h-10 sm:w-10 object-cover rounded-full" 
+              />
               <div className="flex flex-col">
-                <span className="text-lg font-bold text-foreground">Roses Garden</span>
-                <span className="text-xs text-muted-foreground">Your Joy is Roses</span>
+                <span className="text-base sm:text-lg font-bold text-foreground">Roses Garden</span>
+                <span className="text-xs text-muted-foreground hidden sm:block">Your Joy is Roses</span>
               </div>
             </Link>
           </div>
 
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-4 lg:space-x-8">
             <Link 
               to="/" 
               className={`text-sm font-medium transition-colors hover:text-primary ${
@@ -104,36 +110,41 @@ const Navigation = () => {
             )}
           </div>
 
-          <div className="flex items-center space-x-4">
-            {/* Language Selector */}
-            <Select value={language} onValueChange={setLanguage}>
-              <SelectTrigger className="w-16 h-8 border-none">
-                <Globe className="h-4 w-4" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="en">EN</SelectItem>
-                <SelectItem value="ar">AR</SelectItem>
-                <SelectItem value="fr">FR</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            {/* Language Selector - Hidden on mobile */}
+            <div className="hidden sm:block">
+              <Select value={language} onValueChange={setLanguage}>
+                <SelectTrigger className="w-12 sm:w-16 h-8 border-none">
+                  <Globe className="h-4 w-4" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">EN</SelectItem>
+                  <SelectItem value="ar">AR</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-            {/* Currency Selector */}
-            <Select value={currency} onValueChange={setCurrency}>
-              <SelectTrigger className="w-20 h-8 border-none">
-                <Coins className="h-4 w-4" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="USD">USD</SelectItem>
-                <SelectItem value="SAR">SAR</SelectItem>
-                <SelectItem value="EUR">EUR</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Currency Selector - Hidden on mobile */}
+            <div className="hidden sm:block">
+              <Select value={currency} onValueChange={setCurrency}>
+                <SelectTrigger className="w-16 sm:w-20 h-8 border-none">
+                  <Coins className="h-4 w-4" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="USD">USD</SelectItem>
+                  <SelectItem value="SAR">SAR</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
             <CartSidebar>
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingBag className="h-5 w-5" />
                 {state.itemCount > 0 && (
-                  <Badge variant="secondary" className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-primary text-primary-foreground">
+                  <Badge 
+                    variant="secondary" 
+                    className="absolute -top-1 sm:-top-2 -right-1 sm:-right-2 h-4 sm:h-5 w-4 sm:w-5 rounded-full p-0 flex items-center justify-center text-[10px] sm:text-xs bg-primary text-primary-foreground"
+                  >
                     {state.itemCount}
                   </Badge>
                 )}
@@ -143,16 +154,22 @@ const Navigation = () => {
             {authState.isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="border-border text-foreground">
-                    <User className="h-4 w-4 mr-2" />
-                    {authState.user?.first_name}
+                  <Button 
+                    variant="outline" 
+                    className="border-border text-foreground h-9 px-2 sm:px-4"
+                    size="sm"
+                  >
+                    <User className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">{authState.user?.first_name}</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-[280px] sm:w-56">
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium">{authState.user?.first_name} {authState.user?.last_name}</p>
-                      <p className="w-[200px] truncate text-sm text-muted-foreground">
+                      <p className="font-medium text-sm sm:text-base">
+                        {authState.user?.first_name} {authState.user?.last_name}
+                      </p>
+                      <p className="w-full truncate text-xs sm:text-sm text-muted-foreground">
                         {authState.user?.email}
                       </p>
                     </div>

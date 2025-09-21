@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import { FormField } from '@/components/ui/form-field';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, EyeOff, Mail, Lock, User, Phone, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Mail, Lock, User, Phone, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
+import { validateEmail, validatePassword, validatePhone, validateName } from '@/lib/utils';
 
 interface AuthModalProps {
   open: boolean;
@@ -30,12 +32,115 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onClose }) => {
     phone: '',
   });
 
+  const [errors, setErrors] = useState({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    first_name: '',
+    last_name: '',
+    phone: '',
+  });
+
+  const [touched, setTouched] = useState({
+    email: false,
+    password: false,
+    confirmPassword: false,
+    first_name: false,
+    last_name: false,
+    phone: false,
+  });
+
+  const validateForm = () => {
+    const newErrors = { ...errors };
+    let isValid = true;
+
+    // Email validation
+    if (!validateEmail(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+      isValid = false;
+    } else {
+      newErrors.email = '';
+    }
+
+    // Password validation
+    if (!isLogin) {
+      const passwordValidation = validatePassword(formData.password);
+      if (!passwordValidation.isValid) {
+        newErrors.password = `Password must have: ${passwordValidation.errors.join(', ')}`;
+        isValid = false;
+      } else {
+        newErrors.password = '';
+      }
+
+      if (formData.password !== formData.confirmPassword) {
+        newErrors.confirmPassword = 'Passwords do not match';
+        isValid = false;
+      } else {
+        newErrors.confirmPassword = '';
+      }
+
+      // Name validation
+      if (!validateName(formData.first_name)) {
+        newErrors.first_name = 'Please enter a valid first name';
+        isValid = false;
+      } else {
+        newErrors.first_name = '';
+      }
+
+      if (!validateName(formData.last_name)) {
+        newErrors.last_name = 'Please enter a valid last name';
+        isValid = false;
+      } else {
+        newErrors.last_name = '';
+      }
+
+      // Phone validation (optional)
+      if (formData.phone && !validatePhone(formData.phone)) {
+        newErrors.phone = 'Please enter a valid phone number';
+        isValid = false;
+      } else {
+        newErrors.phone = '';
+      }
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  useEffect(() => {
+    if (Object.values(touched).some(t => t)) {
+      validateForm();
+    }
+  }, [formData]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const { state, login, register, socialLogin, sendPasswordResetEmail, clearError } = useAuth();
   const { t } = useLanguage();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Mark all fields as touched to trigger validation
+    setTouched({
+      email: true,
+      password: true,
+      confirmPassword: !isLogin,
+      first_name: !isLogin,
+      last_name: !isLogin,
+      phone: !isLogin,
+    });
+
+    // Validate form
+    const isValid = validateForm();
+    if (!isValid) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please check the form for errors',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsLoading(true);
     clearError();
     
@@ -49,15 +154,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onClose }) => {
         onClose();
         resetForm();
       } else {
-        if (formData.password !== formData.confirmPassword) {
-          toast({
-            title: 'Error',
-            description: 'Passwords do not match',
-            variant: 'destructive',
-          });
-          return;
-        }
-        
         await register({
           email: formData.email,
           password: formData.password,
@@ -73,15 +169,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onClose }) => {
         onClose();
         resetForm();
       }
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Something went wrong';
       toast({
         title: 'Error',
-        description: error.message || 'Something went wrong',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleBlur = (fieldName: keyof typeof touched) => {
+    setTouched(prev => ({
+      ...prev,
+      [fieldName]: true
+    }));
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,10 +220,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onClose }) => {
         title: 'Password Reset Email Sent',
         description: 'Check your email for reset instructions',
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: 'Error',
-        description: error.message || 'Failed to send reset email',
+        description: (error as Error).message || 'Failed to send reset email',
         variant: 'destructive',
       });
     } finally {
@@ -130,10 +234,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onClose }) => {
   const handleSocialLogin = async (provider: 'google' | 'facebook') => {
     try {
       await socialLogin(provider);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: 'Error',
-        description: error.message || 'Social login failed',
+        description: (error as Error).message || 'Social login failed',
         variant: 'destructive',
       });
     }

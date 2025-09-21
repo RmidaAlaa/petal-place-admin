@@ -18,22 +18,31 @@ import { useCurrency } from '@/contexts/CurrencyContext';
 import { productService, Product, ProductVariant, ProductSpecification } from '@/services/productService';
 import ProductReviews from '@/components/ProductReviews';
 import { toast } from 'sonner';
-import { 
-  Heart, 
-  Star, 
-  Share2, 
-  Minus, 
-  Plus, 
-  Truck, 
-  Shield, 
-  RotateCcw, 
+import {
+  Heart,
+  Star,
+  Share2,
+  Minus,
+  Plus,
+  Truck,
+  Shield,
+  RotateCcw,
   ZoomIn,
   ChevronLeft,
   ChevronRight,
   ShoppingCart,
   MessageCircle,
   ThumbsUp,
-  ThumbsDown
+  ThumbsDown,
+  Facebook,
+  Twitter,
+  Instagram,
+  Mail,
+  Link,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -71,7 +80,9 @@ const ProductDetailPage: React.FC = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showImageModal, setShowImageModal] = useState(false);
-  
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+
   // Review state
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewRating, setReviewRating] = useState(0);
@@ -188,13 +199,46 @@ const ProductDetailPage: React.FC = () => {
       setShowReviewForm(false);
       setReviewRating(0);
       setReviewComment('');
-      
+
       // Reload reviews
       const reviewsData = await productService.getProductReviews(product.id);
       setReviews(reviewsData.reviews);
     } catch (error: any) {
       toast.error(error.message || 'Failed to submit review');
     }
+  };
+
+  const handleShare = (platform: string) => {
+    if (!product) return;
+
+    const url = window.location.href;
+    const text = `Check out this amazing product: ${product.name}`;
+
+    switch (platform) {
+      case 'facebook':
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+        break;
+      case 'twitter':
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+        break;
+      case 'email':
+        window.open(`mailto:?subject=${encodeURIComponent(product.name)}&body=${encodeURIComponent(`${text}\n\n${url}`)}`);
+        break;
+      case 'copy':
+        navigator.clipboard.writeText(url);
+        toast.success('Link copied to clipboard!');
+        break;
+    }
+    setShowShareModal(false);
+  };
+
+  const getMediaType = (url: string) => {
+    const extension = url.split('.').pop()?.toLowerCase();
+    return ['mp4', 'webm', 'ogg'].includes(extension || '') ? 'video' : 'image';
+  };
+
+  const toggleVideoPlayback = () => {
+    setIsVideoPlaying(!isVideoPlaying);
   };
 
   if (isLoading) {
@@ -249,15 +293,43 @@ const ProductDetailPage: React.FC = () => {
           </nav>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Product Images */}
+            {/* Product Media Gallery */}
             <div className="space-y-4">
-              <div className="aspect-square relative overflow-hidden rounded-lg bg-muted">
-                <img
-                  src={product.images[selectedImageIndex]}
-                  alt={product.name}
-                  className="w-full h-full object-cover cursor-zoom-in"
-                  onClick={() => setShowImageModal(true)}
-                />
+              <div className="aspect-square relative overflow-hidden rounded-lg bg-muted group">
+                {getMediaType(product.images[selectedImageIndex]) === 'video' ? (
+                  <video
+                    src={product.images[selectedImageIndex]}
+                    className="w-full h-full object-cover"
+                    controls={isVideoPlaying}
+                    autoPlay={isVideoPlaying}
+                    muted
+                    loop
+                    onClick={() => setShowImageModal(true)}
+                  />
+                ) : (
+                  <img
+                    src={product.images[selectedImageIndex]}
+                    alt={product.name}
+                    className="w-full h-full object-cover cursor-zoom-in group-hover:scale-105 transition-transform"
+                    onClick={() => setShowImageModal(true)}
+                  />
+                )}
+
+                {/* Media Controls */}
+                {getMediaType(product.images[selectedImageIndex]) === 'video' && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      onClick={toggleVideoPlayback}
+                      className="rounded-full"
+                    >
+                      {isVideoPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
+                    </Button>
+                  </div>
+                )}
+
+                {/* Badges */}
                 {product.is_new && (
                   <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground">
                     New
@@ -268,24 +340,45 @@ const ProductDetailPage: React.FC = () => {
                     -{discountPercentage}%
                   </Badge>
                 )}
+
+                {/* Media Type Indicator */}
+                <div className="absolute bottom-4 left-4">
+                  <Badge variant="secondary" className="text-xs">
+                    {getMediaType(product.images[selectedImageIndex]) === 'video' ? 'Video' : 'Image'} {selectedImageIndex + 1} of {product.images.length}
+                  </Badge>
+                </div>
               </div>
 
-              {/* Thumbnail Images */}
+              {/* Enhanced Media Thumbnails */}
               {product.images.length > 1 && (
-                <div className="flex space-x-2 overflow-x-auto">
-                  {product.images.map((image, index) => (
+                <div className="grid grid-cols-6 gap-2">
+                  {product.images.map((media, index) => (
                     <button
                       key={index}
                       onClick={() => setSelectedImageIndex(index)}
-                      className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 ${
-                        selectedImageIndex === index ? 'border-primary' : 'border-border'
+                      className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                        selectedImageIndex === index ? 'border-primary ring-2 ring-primary/20' : 'border-border hover:border-primary/50'
                       }`}
+                      title={`${getMediaType(media) === 'video' ? 'Video' : 'Image'} ${index + 1}`}
                     >
-                      <img
-                        src={image}
-                        alt={`${product.name} ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
+                      {getMediaType(media) === 'video' ? (
+                        <>
+                          <video
+                            src={media}
+                            className="w-full h-full object-cover"
+                            muted
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                            <Play className="h-4 w-4 text-white" />
+                          </div>
+                        </>
+                      ) : (
+                        <img
+                          src={media}
+                          alt={`${product.name} ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
                     </button>
                   ))}
                 </div>
@@ -411,9 +504,52 @@ const ProductDetailPage: React.FC = () => {
                   >
                     <Heart className={`h-4 w-4 ${isFavorite(product.id) ? 'fill-primary text-primary' : ''}`} />
                   </Button>
-                  <Button variant="outline" size="icon">
-                    <Share2 className="h-4 w-4" />
-                  </Button>
+                  <Dialog open={showShareModal} onOpenChange={setShowShareModal}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="icon">
+                        <Share2 className="h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Share this product</DialogTitle>
+                      </DialogHeader>
+                      <div className="grid grid-cols-2 gap-4">
+                        <Button
+                          variant="outline"
+                          onClick={() => handleShare('facebook')}
+                          className="flex items-center space-x-2 h-12"
+                        >
+                          <Facebook className="h-5 w-5 text-blue-600" />
+                          <span>Facebook</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleShare('twitter')}
+                          className="flex items-center space-x-2 h-12"
+                        >
+                          <Twitter className="h-5 w-5 text-blue-400" />
+                          <span>Twitter</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleShare('email')}
+                          className="flex items-center space-x-2 h-12"
+                        >
+                          <Mail className="h-5 w-5 text-gray-600" />
+                          <span>Email</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleShare('copy')}
+                          className="flex items-center space-x-2 h-12"
+                        >
+                          <Link className="h-5 w-5 text-gray-600" />
+                          <span>Copy Link</span>
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
 
                 {/* Stock Status */}
@@ -469,33 +605,203 @@ const ProductDetailPage: React.FC = () => {
               </TabsContent>
 
               <TabsContent value="specifications" className="mt-6">
-                <Card>
-                  <CardContent className="p-6">
-                    {specifications.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {specifications.map((spec) => (
-                          <div key={spec.id} className="flex justify-between py-2 border-b">
-                            <span className="font-medium">{spec.name}</span>
-                            <span className="text-muted-foreground">{spec.value}</span>
+                <div className="space-y-6">
+                  {/* Product Overview */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Product Overview</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-3">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">SKU</span>
+                            <span className="font-mono text-sm">{product.sku}</span>
                           </div>
-                        ))}
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Category</span>
+                            <span>{product.category}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Vendor</span>
+                            <span>{product.vendor}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Stock Status</span>
+                            <Badge variant={product.stock_quantity > 0 ? "default" : "destructive"}>
+                              {product.stock_quantity > 0 ? `${product.stock_quantity} in stock` : 'Out of stock'}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Rating</span>
+                            <div className="flex items-center space-x-1">
+                              <Star className="h-4 w-4 fill-primary text-primary" />
+                              <span>{product.rating.toFixed(1)}</span>
+                            </div>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Reviews</span>
+                            <span>{product.review_count}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Media</span>
+                            <span>{product.images.length} items</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Status</span>
+                            <Badge variant={product.is_active ? "default" : "secondary"}>
+                              {product.is_active ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </div>
+                        </div>
                       </div>
-                    ) : (
-                      <p className="text-muted-foreground">No specifications available.</p>
-                    )}
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+
+                  {/* Detailed Specifications */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Technical Specifications</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {specifications.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {specifications.map((spec) => (
+                            <div key={spec.id} className="flex justify-between py-3 px-4 bg-muted/50 rounded-lg">
+                              <span className="font-medium">{spec.name}</span>
+                              <span className="text-muted-foreground">{spec.value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground text-center py-8">No detailed specifications available.</p>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                </div>
               </TabsContent>
 
               <TabsContent value="reviews" className="mt-6">
-                <ProductReviews 
-                  productId={product.id} 
-                  productName={product.name}
-                  onReviewAdded={() => {
-                    // Refresh product data or show success message
-                    toast.success('Thank you for your review!');
-                  }}
-                />
+                <div className="space-y-6">
+                  {/* Rating Summary */}
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="text-center">
+                          <div className="text-4xl font-bold text-primary mb-2">
+                            {product.rating.toFixed(1)}
+                          </div>
+                          <div className="flex items-center justify-center mb-2">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`h-5 w-5 ${
+                                  i < Math.floor(product.rating)
+                                    ? 'fill-primary text-primary'
+                                    : 'text-muted-foreground'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Based on {product.review_count} reviews
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          {[5, 4, 3, 2, 1].map((rating) => (
+                            <div key={rating} className="flex items-center space-x-2">
+                              <span className="text-sm w-8">{rating}★</span>
+                              <div className="flex-1 bg-muted rounded-full h-2">
+                                <div
+                                  className="bg-primary h-2 rounded-full"
+                                  style={{
+                                    width: `${product.review_count > 0 ? (reviews.filter(r => r.rating === rating).length / product.review_count) * 100 : 0}%`
+                                  }}
+                                />
+                              </div>
+                              <span className="text-sm text-muted-foreground w-8">
+                                {reviews.filter(r => r.rating === rating).length}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Write Review Button */}
+                  {authState.isAuthenticated && (
+                    <div className="flex justify-center">
+                      <Dialog open={showReviewForm} onOpenChange={setShowReviewForm}>
+                        <DialogTrigger asChild>
+                          <Button>
+                            <MessageCircle className="h-4 w-4 mr-2" />
+                            Write a Review
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Write a Review</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div>
+                              <Label>Rating</Label>
+                              <div className="flex space-x-1">
+                                {[...Array(5)].map((_, i) => (
+                                  <button
+                                    key={i}
+                                    onClick={() => setReviewRating(i + 1)}
+                                    className="text-2xl"
+                                  >
+                                    <Star
+                                      className={`h-8 w-8 ${
+                                        i < reviewRating
+                                          ? 'fill-primary text-primary'
+                                          : 'text-muted-foreground'
+                                      }`}
+                                    />
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <Label htmlFor="review-comment">Comment</Label>
+                              <Textarea
+                                id="review-comment"
+                                value={reviewComment}
+                                onChange={(e) => setReviewComment(e.target.value)}
+                                placeholder="Share your experience with this product..."
+                                rows={4}
+                              />
+                            </div>
+                            <div className="flex justify-end space-x-2">
+                              <Button variant="outline" onClick={() => setShowReviewForm(false)}>
+                                Cancel
+                              </Button>
+                              <Button onClick={handleSubmitReview} disabled={reviewRating === 0}>
+                                Submit Review
+                              </Button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  )}
+
+                  {/* Reviews List */}
+                  <ProductReviews
+                    productId={product.id}
+                    productName={product.name}
+                    onReviewAdded={() => {
+                      // Refresh product data or show success message
+                      toast.success('Thank you for your review!');
+                    }}
+                  />
+                </div>
               </TabsContent>
 
               <TabsContent value="shipping" className="mt-6">
@@ -562,94 +868,90 @@ const ProductDetailPage: React.FC = () => {
           )}
         </div>
 
-        {/* Image Modal */}
+        {/* Enhanced Media Modal */}
         <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
-          <DialogContent className="max-w-4xl">
+          <DialogContent className="max-w-5xl max-h-[90vh]">
             <DialogHeader>
-              <DialogTitle>{product.name}</DialogTitle>
+              <DialogTitle className="flex items-center justify-between">
+                <span>{product.name}</span>
+                <Badge variant="secondary">
+                  {getMediaType(product.images[selectedImageIndex]) === 'video' ? 'Video' : 'Image'} {selectedImageIndex + 1} of {product.images.length}
+                </Badge>
+              </DialogTitle>
             </DialogHeader>
-            <div className="relative">
-              <img
-                src={product.images[selectedImageIndex]}
-                alt={product.name}
-                className="w-full h-auto max-h-[70vh] object-contain"
-              />
+            <div className="relative bg-black rounded-lg overflow-hidden">
+              {getMediaType(product.images[selectedImageIndex]) === 'video' ? (
+                <video
+                  src={product.images[selectedImageIndex]}
+                  controls
+                  autoPlay
+                  className="w-full h-auto max-h-[70vh] object-contain"
+                />
+              ) : (
+                <img
+                  src={product.images[selectedImageIndex]}
+                  alt={product.name}
+                  className="w-full h-auto max-h-[70vh] object-contain"
+                />
+              )}
+
               {product.images.length > 1 && (
                 <>
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     size="icon"
-                    className="absolute left-4 top-1/2 -translate-y-1/2"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 border-0"
                     onClick={() => setSelectedImageIndex(
                       selectedImageIndex === 0 ? product.images.length - 1 : selectedImageIndex - 1
                     )}
                   >
-                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="h-6 w-6" />
                   </Button>
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     size="icon"
-                    className="absolute right-4 top-1/2 -translate-y-1/2"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 border-0"
                     onClick={() => setSelectedImageIndex(
                       selectedImageIndex === product.images.length - 1 ? 0 : selectedImageIndex + 1
                     )}
                   >
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-6 w-6" />
                   </Button>
                 </>
+              )}
+
+              {/* Thumbnail strip */}
+              {product.images.length > 1 && (
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 bg-black/50 rounded-lg p-2">
+                  {product.images.map((media, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedImageIndex(index)}
+                      className={`w-12 h-12 rounded border-2 overflow-hidden ${
+                        selectedImageIndex === index ? 'border-white' : 'border-gray-400'
+                      }`}
+                    >
+                      {getMediaType(media) === 'video' ? (
+                        <video
+                          src={media}
+                          className="w-full h-full object-cover"
+                          muted
+                        />
+                      ) : (
+                        <img
+                          src={media}
+                          alt={`Thumbnail ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
           </DialogContent>
         </Dialog>
 
-        {/* Review Form Modal */}
-        <Dialog open={showReviewForm} onOpenChange={setShowReviewForm}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Write a Review</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Rating</Label>
-                <div className="flex space-x-1">
-                  {[...Array(5)].map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setReviewRating(i + 1)}
-                      className="text-2xl"
-                    >
-                      <Star
-                        className={`h-8 w-8 ${
-                          i < reviewRating
-                            ? 'fill-primary text-primary'
-                            : 'text-muted-foreground'
-                        }`}
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="review-comment">Comment</Label>
-                <Textarea
-                  id="review-comment"
-                  value={reviewComment}
-                  onChange={(e) => setReviewComment(e.target.value)}
-                  placeholder="Share your experience with this product..."
-                  rows={4}
-                />
-              </div>
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setShowReviewForm(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSubmitReview} disabled={reviewRating === 0}>
-                  Submit Review
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     </ErrorBoundary>
   );

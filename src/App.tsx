@@ -27,71 +27,70 @@ import Occasions from "./pages/Occasions";
 import GiftBoxes from "./pages/GiftBoxes";
 import Partners from "./pages/Partners";
 import Success from "./pages/Success";
-import CartSidebar from "./components/CartSidebar";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <ErrorBoundary>
-        <QueryClientProvider client={queryClient}>
-          <LanguageProvider>
-            <CurrencyProvider>
-              <AuthProvider>
-                <FavoritesProvider>
-                  <WishlistProvider>
-                    <RecentlyViewedProvider>
-                      <CartProvider>
-                        <EmailProvider>
-                          <ReviewProvider>
-                            <TooltipProvider>
-                              <Toaster />
-                              <Sonner />
-                              <BrowserRouter>
-                              <Routes>
-                                <Route path="/" element={<Marketplace />} />
-                                <Route path="/search" element={<SearchResults />} />
-                                <Route path="/product/:id" element={<ProductDetailPage />} />
-                                <Route path="/builder" element={<BouquetBuilder />} />
-                                <Route path="/categories" element={<Categories />} />
-                                <Route path="/checkout" element={
-                                  <ProtectedRoute>
-                                    <CheckoutPage />
-                                  </ProtectedRoute>
-                                } />
-                                <Route path="/profile" element={
-                                  <ProtectedRoute>
-                                    <Profile />
-                                  </ProtectedRoute>
-                                } />
-                                <Route path="/wishlist" element={
-                                  <ProtectedRoute>
-                                    <WishlistPage />
-                                  </ProtectedRoute>
-                                } />
-                                <Route path="/occasions" element={<Occasions />} />
-                                <Route path="/gift-boxes" element={<GiftBoxes />} />
-                                <Route path="/partners" element={<Partners />} />
-                                <Route path="/success" element={<Success />} />
-                                <Route path="/admin" element={
-                                  <ProtectedRoute requiredRole="admin">
-                                    <Admin />
-                                  </ProtectedRoute>
-                                } />
-                                <Route path="*" element={<NotFound />} />
-                              </Routes>
-                            </BrowserRouter>
-                          </TooltipProvider>
-                          </ReviewProvider>
-                        </EmailProvider>
-                      </CartProvider>
-                    </RecentlyViewedProvider>
-                  </WishlistProvider>
-                </FavoritesProvider>
-              </AuthProvider>
-            </CurrencyProvider>
-          </LanguageProvider>
-        </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <LanguageProvider>
+        <CurrencyProvider>
+          <EmailProvider>
+            <AuthProvider>
+              <FavoritesProvider>
+                <WishlistProvider>
+                  <RecentlyViewedProvider>
+                    <CartProvider>
+                      <ReviewProvider>
+                        <TooltipProvider>
+                          <Toaster />
+                          <Sonner />
+                          <BrowserRouter>
+                            <Routes>
+                              <Route path="/" element={<Marketplace />} />
+                              <Route path="/search" element={<SearchResults />} />
+                              <Route path="/product/:id" element={<ProductDetailPage />} />
+                              <Route path="/builder" element={<BouquetBuilder />} />
+                              <Route path="/categories" element={<Categories />} />
+                              <Route path="/checkout" element={
+                                <ProtectedRoute>
+                                  <CheckoutPage />
+                                </ProtectedRoute>
+                              } />
+                              <Route path="/profile" element={
+                                <ProtectedRoute>
+                                  <Profile />
+                                </ProtectedRoute>
+                              } />
+                              <Route path="/wishlist" element={
+                                <ProtectedRoute>
+                                  <WishlistPage />
+                                </ProtectedRoute>
+                              } />
+                              <Route path="/occasions" element={<Occasions />} />
+                              <Route path="/gift-boxes" element={<GiftBoxes />} />
+                              <Route path="/partners" element={<Partners />} />
+                              <Route path="/success" element={<Success />} />
+                              <Route path="/admin" element={
+                                <ProtectedRoute requiredRole="admin">
+                                  <Admin />
+                                </ProtectedRoute>
+                              } />
+                              <Route path="*" element={<NotFound />} />
+                            </Routes>
+                          </BrowserRouter>
+                        </TooltipProvider>
+                      </ReviewProvider>
+                    </CartProvider>
+                  </RecentlyViewedProvider>
+                </WishlistProvider>
+              </FavoritesProvider>
+            </AuthProvider>
+          </EmailProvider>
+        </CurrencyProvider>
+      </LanguageProvider>
+    </QueryClientProvider>
   </ErrorBoundary>
 );
 

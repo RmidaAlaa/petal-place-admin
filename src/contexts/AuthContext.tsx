@@ -89,7 +89,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
-  const { sendWelcomeEmail, sendPasswordReset } = useEmail();
+  const emailContext = useEmail();
 
   useEffect(() => {
     const initAuth = async () => {
@@ -147,7 +147,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // Send welcome email
       if (response.user) {
-        sendWelcomeEmail({
+        await emailContext.sendWelcomeEmail({
           customerName: `${response.user.first_name} ${response.user.last_name}`,
           customerEmail: response.user.email,
           loginLink: `${window.location.origin}/profile`,
@@ -203,8 +203,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await authService.sendPasswordResetEmail(data);
       
       // Send password reset email
-      sendPasswordReset({
-        customerName: data.email, // We don't have the name in this context
+      // Only send the email after successful API call
+      await emailContext.sendPasswordReset({
+        customerName: data.email.split('@')[0], // Use first part of email as name
         customerEmail: data.email,
         resetLink: `${window.location.origin}/reset-password`,
         expiresIn: '24 hours',

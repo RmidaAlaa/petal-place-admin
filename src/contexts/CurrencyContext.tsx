@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type Currency = 'USD' | 'SAR' | 'EUR';
+export type Currency = 'USD' | 'SAR';
 
 interface CurrencyContextType {
   currency: Currency;
@@ -21,13 +21,11 @@ const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined
 const DEFAULT_RATES: Record<Currency, number> = {
   USD: 1,
   SAR: 3.75,
-  EUR: 0.85,
 };
 
 const CURRENCY_SYMBOLS: Record<Currency, string> = {
   USD: '$',
   SAR: '﷼',
-  EUR: '€',
 };
 
 export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({ children }) => {

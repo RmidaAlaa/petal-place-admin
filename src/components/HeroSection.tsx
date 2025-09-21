@@ -14,11 +14,11 @@ const HeroSection = () => {
   };
 
   const handleShopNow = () => {
-    navigate('/');
+    navigate('/marketplace');
   };
 
   const handleBrowseCategories = () => {
-    navigate('/#categories');
+    navigate('/categories');
   };
 
   return (
