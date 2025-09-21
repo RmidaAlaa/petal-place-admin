@@ -5,6 +5,31 @@ import { Readable } from 'stream';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
 import { pool } from '../database/connection';
 
+interface CSVRow {
+  name?: string;
+  description?: string;
+  price?: string;
+  original_price?: string;
+  currency?: string;
+  image_url?: string;
+  images?: string;
+  category?: string;
+  category_description?: string;
+  vendor?: string;
+  vendor_email?: string;
+  vendor_phone?: string;
+  vendor_address?: string;
+  vendor_city?: string;
+  stock_quantity?: string;
+  is_featured?: string;
+  featured?: string;
+  is_active?: string;
+  active?: string;
+  rating?: string;
+  review_count?: string;
+  [key: string]: string | undefined;
+}
+
 const router = express.Router();
 
 // Configure multer for CSV uploads
@@ -29,7 +54,7 @@ router.post('/products', authenticateToken, requireAdmin, upload.single('csv'), 
       return res.status(400).json({ error: 'No CSV file uploaded' });
     }
 
-    const results: any[] = [];
+    const results: CSVRow[] = [];
     const stream = Readable.from(req.file.buffer);
     
     stream
@@ -119,8 +144,9 @@ router.post('/products', authenticateToken, requireAdmin, upload.single('csv'), 
               ]);
 
               importedCount++;
-            } catch (error: any) {
-              errors.push(`Row ${importedCount + errorCount + 1}: ${error.message}`);
+            } catch (error) {
+              const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+              errors.push(`Row ${importedCount + errorCount + 1}: ${errorMessage}`);
               errorCount++;
             }
           }
@@ -131,16 +157,18 @@ router.post('/products', authenticateToken, requireAdmin, upload.single('csv'), 
             errors: errorCount,
             errorDetails: errors
           });
-        } catch (error: any) {
-          res.status(500).json({ error: 'Failed to process CSV data: ' + error.message });
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          res.status(500).json({ error: 'Failed to process CSV data: ' + errorMessage });
         }
       })
       .on('error', (error) => {
         res.status(500).json({ error: 'Failed to parse CSV: ' + error.message });
       });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Import error:', error);
-    res.status(500).json({ error: 'Import failed: ' + error.message });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ error: 'Import failed: ' + errorMessage });
   }
 });
 

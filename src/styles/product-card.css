@@ -1,0 +1,90 @@
+.product-card {
+  @apply relative bg-background rounded-xl shadow-md transition-all duration-300 hover:shadow-lg;
+
+  /* Mobile-first breakpoints */
+  @apply w-full max-w-[300px] mx-auto;
+  @apply sm:max-w-[320px];
+  @apply lg:max-w-[340px];
+
+  /* Card image container */
+  .product-image-container {
+    @apply relative w-full aspect-[4/3] overflow-hidden rounded-t-xl;
+
+    img {
+      @apply object-cover w-full h-full transition-transform duration-300;
+    }
+
+    &:hover img {
+      @apply scale-110;
+    }
+
+    /* Quick view button */
+    .quick-view-btn {
+      @apply absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity;
+      @apply hover:opacity-100;
+    }
+  }
+
+  /* Badge positioning */
+  .badge-container {
+    @apply absolute top-2 left-2 flex flex-col gap-1;
+  }
+
+  /* Favorite button */
+  .favorite-btn {
+    @apply absolute top-2 right-2;
+    @apply h-8 w-8 rounded-full bg-background/80 p-0;
+    @apply hover:bg-background;
+
+    svg {
+      @apply h-4 w-4;
+    }
+  }
+
+  /* Product info */
+  .product-info {
+    @apply p-3 sm:p-4;
+
+    .product-name {
+      @apply text-sm sm:text-base font-medium line-clamp-1;
+    }
+
+    .product-price {
+      @apply mt-1 text-sm sm:text-base font-semibold;
+    }
+
+    .product-original-price {
+      @apply text-xs sm:text-sm text-muted-foreground line-through;
+    }
+
+    .product-vendor {
+      @apply text-xs text-muted-foreground truncate;
+    }
+  }
+
+  /* Rating section */
+  .rating-section {
+    @apply flex items-center gap-1 mt-1;
+
+    .star-icon {
+      @apply h-3 w-3 sm:h-4 sm:w-4 text-yellow-400;
+    }
+
+    .rating-text {
+      @apply text-xs sm:text-sm text-muted-foreground;
+    }
+  }
+
+  /* Action buttons */
+  .action-buttons {
+    @apply grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 sm:p-4 pt-0;
+
+    .view-details-btn {
+      @apply w-full sm:order-2;
+    }
+
+    .add-to-cart-btn {
+      @apply w-full sm:order-1;
+    }
+  }
+}
