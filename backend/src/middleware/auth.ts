@@ -2,12 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { UserModel } from '../models/User';
 
-export interface AuthRequest<
-  P extends Record<string, unknown> = Record<string, unknown>,
-  ResBody = unknown,
-  ReqBody = unknown,
-  ReqQuery extends Record<string, unknown> = Record<string, unknown>
-> extends Request<P, ResBody, ReqBody, ReqQuery> {
+export type AuthRequest = Request & {
   user?: {
     id: string;
     email: string;

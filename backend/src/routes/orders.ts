@@ -1,12 +1,12 @@
 import express, { Request, Response } from 'express';
-import { OrderModel, CreateOrderData } from '../models/Order';
+import { OrderModel, CreateOrderData, UpdateOrderData } from '../models/Order';
 import { authenticateToken, requireAdmin, requireCustomer, AuthRequest } from '../middleware/auth';
 import { validateOrder, handleValidationErrors } from '../middleware/validation';
 
 const router = express.Router();
 
 // Create order
-router.post('/', authenticateToken, requireCustomer, validateOrder, handleValidationErrors, async (req: AuthRequest<CreateOrderData>, res: Response) => {
+router.post('/', authenticateToken, requireCustomer, validateOrder, handleValidationErrors, async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) return res.status(401).json({ error: 'Authentication required' });
     const body = (req as Request).body as CreateOrderData;
@@ -100,7 +100,7 @@ router.patch('/:id/status', authenticateToken, requireAdmin, async (req: Request
       return res.status(400).json({ error: 'Invalid status' });
     }
 
-    const updateData: any = {};
+    const updateData: Partial<UpdateOrderData> = {};
     if (status) updateData.status = status;
     if (tracking_number) updateData.tracking_number = tracking_number;
     if (estimated_delivery) updateData.estimated_delivery = estimated_delivery;
@@ -133,7 +133,7 @@ router.patch('/:id/payment', authenticateToken, requireAdmin, async (req: Reques
       return res.status(400).json({ error: 'Invalid payment status' });
     }
 
-    const updateData: any = { payment_status };
+    const updateData: Partial<UpdateOrderData> = { payment_status };
     if (payment_intent_id) updateData.payment_intent_id = payment_intent_id;
 
     const order = await OrderModel.update(id, updateData);
@@ -172,7 +172,7 @@ router.get('/recent/list', authenticateToken, requireAdmin, async (req: Request,
 });
 
 // Cancel order
-router.patch('/:id/cancel', authenticateToken, requireCustomer, async (req: AuthRequest<{ reason?: string }>, res: Response) => {
+router.patch('/:id/cancel', authenticateToken, requireCustomer, async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) return res.status(401).json({ error: 'Authentication required' });
     const { id } = req.params;

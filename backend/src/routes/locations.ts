@@ -1,11 +1,11 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { pool } from '../database/connection';
 import { authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
 
 // Get user location
-router.get('/me', authenticateToken, async (req: any, res) => {
+router.get('/me', authenticateToken, async (req: Request, res: Response) => {
   try {
     const query = `
       SELECT * FROM user_locations 
@@ -27,7 +27,7 @@ router.get('/me', authenticateToken, async (req: any, res) => {
 });
 
 // Update user location
-router.post('/me', authenticateToken, async (req: any, res) => {
+router.post('/me', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { latitude, longitude, city, country, address } = req.body;
 
@@ -76,7 +76,7 @@ router.post('/me', authenticateToken, async (req: any, res) => {
 });
 
 // Get location history
-router.get('/history', authenticateToken, async (req: any, res) => {
+router.get('/history', authenticateToken, async (req: Request, res: Response) => {
   try {
     const query = `
       SELECT * FROM user_locations 

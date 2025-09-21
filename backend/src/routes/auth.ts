@@ -110,7 +110,7 @@ router.post('/login', validateUserLogin, handleValidationErrors, async (req: Req
 });
 
 // Get current user
-router.get('/me', authenticateToken, async (req: AuthRequest<Record<string, never>, UserProfileResponse>, res: Response<UserProfileResponse | { error: string }>) => {
+router.get('/me', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -178,7 +178,7 @@ router.post('/change-password', authenticateToken, async (req: AuthRequest, res:
 });
 
 // Update profile
-router.put('/profile', authenticateToken, async (req: AuthRequest<{ first_name?: string; last_name?: string; phone?: string }>, res: Response) => {
+router.put('/profile', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) return res.status(401).json({ error: 'Authentication required' });
     const { first_name, last_name, phone } = (req as Request).body as { first_name?: string; last_name?: string; phone?: string };

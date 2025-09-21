@@ -4,7 +4,7 @@ export interface RegisterRequestBody {
   first_name: string;
   last_name: string;
   phone: string;
-  role: 'customer' | 'admin' | 'florist';
+  role: 'customer' | 'admin' | 'vendor';
 }
 
 export interface LoginRequestBody {

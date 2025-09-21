@@ -1,14 +1,15 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { pool } from '../database/connection';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
+import { PoolClient } from 'pg';
 
 const router = express.Router();
 
 // Get inventory transactions for a product
-router.get('/transactions/:productId', authenticateToken, requireAdmin, async (req: any, res) => {
+router.get('/transactions/:productId', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { productId } = req.params;
-    const { page = 1, limit = 50 } = req.query;
+    const { page = '1', limit = '50' } = req.query as { page?: string; limit?: string };
     
     const offset = (page - 1) * limit;
     
@@ -48,7 +49,7 @@ router.get('/transactions/:productId', authenticateToken, requireAdmin, async (r
 });
 
 // Add inventory transaction
-router.post('/transactions', authenticateToken, requireAdmin, async (req: any, res) => {
+router.post('/transactions', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { 
       product_id, 
@@ -119,7 +120,7 @@ router.post('/transactions', authenticateToken, requireAdmin, async (req: any, r
 });
 
 // Get stock alerts
-router.get('/alerts', authenticateToken, requireAdmin, async (req: any, res) => {
+router.get('/alerts', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { alert_type, is_active = true } = req.query;
     
@@ -154,7 +155,7 @@ router.get('/alerts', authenticateToken, requireAdmin, async (req: any, res) => 
 });
 
 // Create stock alert
-router.post('/alerts', authenticateToken, requireAdmin, async (req: any, res) => {
+router.post('/alerts', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { product_id, alert_type, threshold_quantity } = req.body;
     
@@ -199,7 +200,7 @@ router.post('/alerts', authenticateToken, requireAdmin, async (req: any, res) =>
 });
 
 // Resolve stock alert
-router.patch('/alerts/:alertId/resolve', authenticateToken, requireAdmin, async (req: any, res) => {
+router.patch('/alerts/:alertId/resolve', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { alertId } = req.params;
     
@@ -224,7 +225,7 @@ router.patch('/alerts/:alertId/resolve', authenticateToken, requireAdmin, async 
 });
 
 // Bulk stock update
-router.post('/bulk-update', authenticateToken, requireAdmin, async (req: any, res) => {
+router.post('/bulk-update', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { updates } = req.body;
     
@@ -302,7 +303,7 @@ router.post('/bulk-update', authenticateToken, requireAdmin, async (req: any, re
 });
 
 // Helper function to check stock alerts
-async function checkStockAlerts(client: any, productId: string, currentStock: number) {
+async function checkStockAlerts(client: PoolClient, productId: string, currentStock: number) {
   const alertsQuery = 'SELECT * FROM stock_alerts WHERE product_id = $1 AND is_active = true';
   const alertsResult = await client.query(alertsQuery, [productId]);
   

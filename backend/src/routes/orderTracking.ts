@@ -1,11 +1,11 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { pool } from '../database/connection';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
 
 const router = express.Router();
 
 // Get order tracking history
-router.get('/:orderId', authenticateToken, async (req: any, res) => {
+router.get('/:orderId', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { orderId } = req.params;
     
@@ -42,7 +42,7 @@ router.get('/:orderId', authenticateToken, async (req: any, res) => {
 });
 
 // Add tracking update (admin only)
-router.post('/:orderId', authenticateToken, requireAdmin, async (req: any, res) => {
+router.post('/:orderId', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { orderId } = req.params;
     const { status, description, location, metadata } = req.body;
@@ -89,7 +89,7 @@ router.post('/:orderId', authenticateToken, requireAdmin, async (req: any, res) 
 });
 
 // Get available delivery time slots
-router.get('/delivery-slots/:date', async (req, res) => {
+router.get('/delivery-slots/:date', async (req: Request, res: Response) => {
   try {
     const { date } = req.params;
     
@@ -108,7 +108,7 @@ router.get('/delivery-slots/:date', async (req, res) => {
 });
 
 // Create delivery time slots (admin only)
-router.post('/delivery-slots', authenticateToken, requireAdmin, async (req: any, res) => {
+router.post('/delivery-slots', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { date, time_slots } = req.body;
     
@@ -137,7 +137,7 @@ router.post('/delivery-slots', authenticateToken, requireAdmin, async (req: any,
 });
 
 // Cancel order
-router.post('/:orderId/cancel', authenticateToken, async (req: any, res) => {
+router.post('/:orderId/cancel', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { orderId } = req.params;
     const { reason } = req.body;
@@ -186,7 +186,7 @@ router.post('/:orderId/cancel', authenticateToken, async (req: any, res) => {
 });
 
 // Request refund
-router.post('/:orderId/refund', authenticateToken, async (req: any, res) => {
+router.post('/:orderId/refund', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { orderId } = req.params;
     const { amount, reason } = req.body;

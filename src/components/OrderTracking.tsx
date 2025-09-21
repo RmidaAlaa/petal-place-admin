@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,7 +32,7 @@ interface TrackingEntry {
   created_by?: string;
   first_name?: string;
   last_name?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 interface OrderTrackingProps {
@@ -54,11 +54,7 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, orderNumber, cur
     reason: ''
   });
 
-  useEffect(() => {
-    loadTrackingHistory();
-  }, [orderId]);
-
-  const loadTrackingHistory = async () => {
+  const loadTrackingHistory = useCallback(async () => {
     try {
       setIsLoading(true);
       const data = await apiService.getOrderTracking(orderId);
@@ -72,7 +68,11 @@ const OrderTracking: React.FC<OrderTrackingProps> = ({ orderId, orderNumber, cur
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [orderId, toast]);
+
+  useEffect(() => {
+    loadTrackingHistory();
+  }, [loadTrackingHistory]);
 
   const handleCancelOrder = async () => {
     try {

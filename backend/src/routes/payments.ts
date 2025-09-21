@@ -1,8 +1,19 @@
 import express, { Request, Response } from 'express';
 import Stripe from 'stripe';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
-import { OrderModel } from '../models/Order';
+import { OrderModel, Address } from '../models/Order';
 import { ProductModel } from '../models/Product';
+
+interface CartItem {
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+}
+
+interface CheckoutRequest {
+  items: CartItem[];
+  shipping_address: Address;
+}
 
 const router = express.Router();
 
@@ -12,10 +23,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_...', {
 });
 
 // Create checkout session
-router.post('/create-checkout-session', authenticateToken, async (req: AuthRequest<{ items?: any[]; shipping_address?: any }>, res: Response) => {
+router.post('/create-checkout-session', authenticateToken, async (req: Request, res: Response) => {
   try {
     if (!req.user) return res.status(401).json({ error: 'Authentication required' });
-    const { items, shipping_address } = (req as Request).body as { items?: any[]; shipping_address?: any };
+    const { items, shipping_address } = req.body as CheckoutRequest;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'Items are required' });
@@ -99,7 +110,7 @@ router.post('/success', async (req: Request, res: Response) => {
 
     const orderData = {
       user_id: session.metadata.user_id,
-      items: items.map((item: any) => ({
+      items: items.map((item: CartItem) => ({
         product_id: item.product_id,
         quantity: item.quantity,
         unit_price: item.unit_price,
@@ -134,9 +145,10 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req: R
 
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-  } catch (err: any) {
-    console.error('Webhook signature verification failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+  } catch (err: unknown) {
+    const error = err as Error;
+    console.error('Webhook signature verification failed:', error.message);
+    return res.status(400).send(`Webhook Error: ${error.message}`);
   }
 
   // Handle the event
