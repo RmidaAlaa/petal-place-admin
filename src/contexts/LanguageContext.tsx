@@ -22,12 +22,13 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.bouquetBuilder': 'Bouquet Builder',
     'nav.giftBoxes': 'Gift Boxes',
     'nav.occasions': 'Occasions',
-    'nav.partners': 'Partners',
-    'nav.admin': 'Admin',
-    'nav.signIn': 'Sign In',
-    'nav.profile': 'Profile Settings',
-    'nav.logout': 'Log out',
-    'nav.categories': 'Categories',
+   'nav.partners': 'Partners',
+   'nav.contact': 'Contact Us',
+   'nav.admin': 'Admin',
+   'nav.signIn': 'Sign In',
+   'nav.profile': 'Profile Settings',
+   'nav.logout': 'Log out',
+   'nav.categories': 'Categories',
     'categories.naturalRoses': 'Natural Roses',
     'categories.giftBoxes': 'Gift Boxes',
     'categories.weddingServices': 'Wedding Services',
@@ -120,12 +121,13 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.bouquetBuilder': 'صانع الباقات',
     'nav.giftBoxes': 'صناديق الهدايا',
     'nav.occasions': 'المناسبات',
-    'nav.partners': 'الشركاء',
-    'nav.admin': 'الإدارة',
-    'nav.signIn': 'تسجيل الدخول',
-    'nav.profile': 'إعدادات الملف الشخصي',
-    'nav.logout': 'تسجيل الخروج',
-    'nav.categories': 'الفئات',
+   'nav.partners': 'الشركاء',
+   'nav.contact': 'اتصل بنا',
+   'nav.admin': 'الإدارة',
+   'nav.signIn': 'تسجيل الدخول',
+   'nav.profile': 'إعدادات الملف الشخصي',
+   'nav.logout': 'تسجيل الخروج',
+   'nav.categories': 'الفئات',
     'categories.naturalRoses': 'الورود الطبيعية',
     'categories.giftBoxes': 'صناديق الهدايا',
     'categories.weddingServices': 'خدمات الأعراس',
@@ -217,7 +219,10 @@ const translations: Record<Language, Record<string, string>> = {
 
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
   const [language, setLanguage] = useState<Language>(() => {
-    return (localStorage.getItem('preferred-language') as Language) || 'en';
+    // Check admin settings first, then user preference, then default
+    const adminSettings = localStorage.getItem('admin-settings');
+    const defaultLanguage = adminSettings ? JSON.parse(adminSettings).defaultLanguage : null;
+    return (localStorage.getItem('preferred-language') as Language) || defaultLanguage || 'en';
   });
 
   useEffect(() => {

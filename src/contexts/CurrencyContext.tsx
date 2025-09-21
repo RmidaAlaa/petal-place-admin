@@ -30,7 +30,10 @@ const CURRENCY_SYMBOLS: Record<Currency, string> = {
 
 export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({ children }) => {
   const [currency, setCurrency] = useState<Currency>(() => {
-    return (localStorage.getItem('preferred-currency') as Currency) || 'USD';
+    // Check admin settings first, then user preference, then default
+    const adminSettings = localStorage.getItem('admin-settings');
+    const defaultCurrency = adminSettings ? JSON.parse(adminSettings).defaultCurrency : null;
+    return (localStorage.getItem('preferred-currency') as Currency) || defaultCurrency || 'USD';
   });
   
   const [rates, setRates] = useState<Record<Currency, number>>(DEFAULT_RATES);
