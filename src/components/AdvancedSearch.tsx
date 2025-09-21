@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -77,16 +77,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onResults, onLoading })
     }
   }, [authState.isAuthenticated]);
 
-  useEffect(() => {
-    if (filters.q.length >= 2) {
-      loadSuggestions();
-    } else {
-      setSuggestions([]);
-      setShowSuggestions(false);
-    }
-  }, [filters.q]);
-
-  const loadSuggestions = async () => {
+  const loadSuggestions = useCallback(async () => {
     try {
       const data = await apiService.getSearchSuggestions(filters.q) as { suggestions: { text: string }[] };
       setSuggestions(data.suggestions.map((s: any) => s.text));
@@ -94,7 +85,16 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onResults, onLoading })
     } catch (error) {
       // Silently fail for suggestions
     }
-  };
+  }, [filters.q]);
+
+  useEffect(() => {
+    if (filters.q.length >= 2) {
+      loadSuggestions();
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }, [filters.q, loadSuggestions]);
 
   const loadSearchHistory = async () => {
     try {
