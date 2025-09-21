@@ -125,8 +125,8 @@ export class ProductModel {
   }
 
   static async findWithFilters(filters: ProductFilters): Promise<{ products: Product[], total: number }> {
-    let whereConditions = ['1=1'];
-    let values: any[] = [];
+    const whereConditions = ['1=1'];
+    const values: any[] = [];
     let paramCount = 0;
 
     if (filters.search) {
@@ -249,7 +249,7 @@ export class ProductModel {
       SELECT * FROM products 
       WHERE stock_quantity <= min_stock_level AND is_active = true
     `;
-    let values: any[] = [];
+    const values: any[] = [];
 
     if (vendor_id) {
       query += ' AND vendor_id = $1';

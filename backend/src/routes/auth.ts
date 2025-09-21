@@ -3,13 +3,23 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { UserModel } from '../models/User';
 import { validateUserRegistration, validateUserLogin, handleValidationErrors } from '../middleware/validation';
-import { authenticateToken } from '../middleware/auth';
+import { authenticateToken, AuthRequest } from '../middleware/auth';
+import { Request, Response } from 'express';
 import { pool } from '../database/connection';
+import { 
+  RegisterRequestBody, 
+  LoginRequestBody, 
+  AuthResponse, 
+  TokenPayload,
+  UserProfileResponse,
+  ChangePasswordRequest,
+  ChangePasswordResponse
+} from '../types/auth';
 
 const router = express.Router();
 
 // Register
-router.post('/register', validateUserRegistration, handleValidationErrors, async (req, res) => {
+router.post('/register', validateUserRegistration, handleValidationErrors, async (req: Request<Record<string, never>, AuthResponse, RegisterRequestBody>, res: Response<AuthResponse>) => {
   try {
     const { email, password, first_name, last_name, phone, role } = req.body;
 
@@ -54,7 +64,7 @@ router.post('/register', validateUserRegistration, handleValidationErrors, async
 });
 
 // Login
-router.post('/login', validateUserLogin, handleValidationErrors, async (req, res) => {
+router.post('/login', validateUserLogin, handleValidationErrors, async (req: Request<Record<string, never>, AuthResponse, LoginRequestBody>, res: Response<AuthResponse>) => {
   try {
     const { email, password } = req.body;
 
@@ -100,8 +110,11 @@ router.post('/login', validateUserLogin, handleValidationErrors, async (req, res
 });
 
 // Get current user
-router.get('/me', authenticateToken, async (req: any, res) => {
+router.get('/me', authenticateToken, async (req: AuthRequest<Record<string, never>, UserProfileResponse>, res: Response<UserProfileResponse | { error: string }>) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
     const user = await UserModel.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -127,8 +140,9 @@ router.get('/me', authenticateToken, async (req: any, res) => {
 });
 
 // Change password
-router.post('/change-password', authenticateToken, async (req: any, res) => {
+router.post('/change-password', authenticateToken, async (req: AuthRequest, res: Response<ChangePasswordResponse | { error: string }>) => {
   try {
+    if (!req.user) return res.status(401).json({ error: 'Authentication required' });
     const { current_password, new_password } = req.body;
 
     if (!current_password || !new_password) {
@@ -164,9 +178,10 @@ router.post('/change-password', authenticateToken, async (req: any, res) => {
 });
 
 // Update profile
-router.put('/profile', authenticateToken, async (req: any, res) => {
+router.put('/profile', authenticateToken, async (req: AuthRequest<{ first_name?: string; last_name?: string; phone?: string }>, res: Response) => {
   try {
-    const { first_name, last_name, phone } = req.body;
+    if (!req.user) return res.status(401).json({ error: 'Authentication required' });
+    const { first_name, last_name, phone } = (req as Request).body as { first_name?: string; last_name?: string; phone?: string };
 
     const user = await UserModel.update(req.user.id, {
       first_name,
@@ -196,9 +211,9 @@ router.put('/profile', authenticateToken, async (req: any, res) => {
 });
 
 // Forgot password
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', async (req: Request, res: Response) => {
   try {
-    const { email } = req.body;
+    const { email } = req.body as { email?: string };
 
     if (!email) {
       return res.status(400).json({ error: 'Email is required' });
@@ -237,9 +252,9 @@ router.post('/forgot-password', async (req, res) => {
 });
 
 // Reset password
-router.post('/reset-password', async (req, res) => {
+router.post('/reset-password', async (req: Request, res: Response) => {
   try {
-    const { token, new_password } = req.body;
+    const { token, new_password } = req.body as { token?: string; new_password?: string };
 
     if (!token || !new_password) {
       return res.status(400).json({ error: 'Token and new password are required' });

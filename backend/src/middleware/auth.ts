@@ -2,7 +2,12 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { UserModel } from '../models/User';
 
-export interface AuthRequest extends Request {
+export interface AuthRequest<
+  P extends Record<string, unknown> = Record<string, unknown>,
+  ResBody = unknown,
+  ReqBody = unknown,
+  ReqQuery extends Record<string, unknown> = Record<string, unknown>
+> extends Request<P, ResBody, ReqBody, ReqQuery> {
   user?: {
     id: string;
     email: string;
@@ -10,44 +15,37 @@ export interface AuthRequest extends Request {
   };
 }
 
-export const authenticateToken = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  const authHeader = req.headers['authorization'];
+export const authenticateToken = (req: AuthRequest, res: Response, next: NextFunction) => {
+  // headers is on the Express Request type; ensure TS knows req is an Express request
+  const authHeader = (req as Request).headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    return res.status(401).json({ error: 'Access token required' });
+    return res.sendStatus(401);
   }
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-    const user = await UserModel.findById(decoded.userId);
-    
-    if (!user || !user.is_active) {
-      return res.status(401).json({ error: 'Invalid or inactive user' });
-    }
 
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET as string, (err: unknown, decoded: unknown) => {
+    if (err) return res.sendStatus(403);
+    // JWT payload shape is expected to include userId, email, role
+    const payload = decoded as { userId?: string; email?: string; role?: string };
+    if (!payload || !payload.userId) return res.sendStatus(403);
     req.user = {
-      id: user.id,
-      email: user.email,
-      role: user.role
+      id: payload.userId,
+      email: payload.email || '',
+      role: payload.role || 'customer',
     };
-    
     next();
-  } catch (error) {
-    return res.status(403).json({ error: 'Invalid or expired token' });
-  }
+  });
 };
 
-export const requireRole = (roles: string[]) => {
+
+
+export const requireRole = (roles: string | string[]) => {
+  const rolesArr = Array.isArray(roles) ? roles : [roles];
   return (req: AuthRequest, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
-
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ error: 'Insufficient permissions' });
-    }
-
+    if (!req.user) return res.sendStatus(401);
+    if (!rolesArr.includes(req.user.role)) return res.sendStatus(403);
     next();
   };
 };

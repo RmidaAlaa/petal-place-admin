@@ -1,6 +1,6 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import Stripe from 'stripe';
-import { authenticateToken } from '../middleware/auth';
+import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { OrderModel } from '../models/Order';
 import { ProductModel } from '../models/Product';
 
@@ -12,9 +12,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_...', {
 });
 
 // Create checkout session
-router.post('/create-checkout-session', authenticateToken, async (req: any, res) => {
+router.post('/create-checkout-session', authenticateToken, async (req: AuthRequest<{ items?: any[]; shipping_address?: any }>, res: Response) => {
   try {
-    const { items, shipping_address } = req.body;
+    if (!req.user) return res.status(401).json({ error: 'Authentication required' });
+    const { items, shipping_address } = (req as Request).body as { items?: any[]; shipping_address?: any };
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'Items are required' });
@@ -77,9 +78,9 @@ router.post('/create-checkout-session', authenticateToken, async (req: any, res)
 });
 
 // Handle successful payment
-router.post('/success', async (req, res) => {
+router.post('/success', async (req: Request, res: Response) => {
   try {
-    const { session_id } = req.body;
+    const { session_id } = (req as Request).body as { session_id?: string };
 
     if (!session_id) {
       return res.status(400).json({ error: 'Session ID is required' });
@@ -121,8 +122,8 @@ router.post('/success', async (req, res) => {
 });
 
 // Webhook endpoint for Stripe events
-router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-  const sig = req.headers['stripe-signature'];
+router.post('/webhook', express.raw({ type: 'application/json' }), async (req: Request, res: Response) => {
+  const sig = (req.headers as Record<string, string | string[] | undefined>)['stripe-signature'];
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!sig || !webhookSecret) {
@@ -140,16 +141,18 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
   // Handle the event
   switch (event.type) {
-    case 'checkout.session.completed':
+    case 'checkout.session.completed': {
       const session = event.data.object;
       console.log('Payment succeeded:', session.id);
       // Update order status if needed
       break;
-    case 'payment_intent.payment_failed':
+    }
+    case 'payment_intent.payment_failed': {
       const paymentIntent = event.data.object;
       console.log('Payment failed:', paymentIntent.id);
       // Handle failed payment
       break;
+    }
     default:
       console.log(`Unhandled event type ${event.type}`);
   }

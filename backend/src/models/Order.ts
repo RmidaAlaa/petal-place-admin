@@ -1,14 +1,22 @@
 import { pool } from '../database/connection';
 import { v4 as uuidv4 } from 'uuid';
 
+export interface Address {
+  street: string;
+  city: string;
+  state?: string;
+  postal_code?: string;
+  country: string;
+}
+
 export interface Order {
   id: string;
   user_id: string;
   order_number: string;
   status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   total_amount: number;
-  shipping_address: any;
-  billing_address?: any;
+  shipping_address: Address;
+  billing_address?: Address;
   payment_method?: string;
   payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
   payment_intent_id?: string;
@@ -37,8 +45,8 @@ export interface CreateOrderData {
     quantity: number;
     unit_price: number;
   }[];
-  shipping_address: any;
-  billing_address?: any;
+  shipping_address: Address;
+  billing_address?: Address;
   payment_method?: string;
   notes?: string;
 }
@@ -141,8 +149,8 @@ export class OrderModel {
     limit?: number;
     offset?: number;
   } = {}): Promise<{ orders: Order[], total: number }> {
-    let whereConditions = ['1=1'];
-    let values: any[] = [];
+    const whereConditions = ['1=1'];
+    const values: (string | number)[] = [];
     let paramCount = 0;
 
     if (filters.status) {

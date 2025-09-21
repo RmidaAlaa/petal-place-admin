@@ -1,15 +1,17 @@
-import express from 'express';
-import { OrderModel } from '../models/Order';
-import { authenticateToken, requireAdmin, requireCustomer } from '../middleware/auth';
+import express, { Request, Response } from 'express';
+import { OrderModel, CreateOrderData } from '../models/Order';
+import { authenticateToken, requireAdmin, requireCustomer, AuthRequest } from '../middleware/auth';
 import { validateOrder, handleValidationErrors } from '../middleware/validation';
 
 const router = express.Router();
 
 // Create order
-router.post('/', authenticateToken, requireCustomer, validateOrder, handleValidationErrors, async (req: any, res) => {
+router.post('/', authenticateToken, requireCustomer, validateOrder, handleValidationErrors, async (req: AuthRequest<CreateOrderData>, res: Response) => {
   try {
-    const orderData = {
-      ...req.body,
+    if (!req.user) return res.status(401).json({ error: 'Authentication required' });
+    const body = (req as Request).body as CreateOrderData;
+    const orderData: CreateOrderData = {
+      ...body,
       user_id: req.user.id
     };
 
@@ -22,8 +24,9 @@ router.post('/', authenticateToken, requireCustomer, validateOrder, handleValida
 });
 
 // Get user orders
-router.get('/my-orders', authenticateToken, requireCustomer, async (req: any, res) => {
+router.get('/my-orders', authenticateToken, requireCustomer, async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.user) return res.status(401).json({ error: 'Authentication required' });
     const { limit = 50, offset = 0 } = req.query;
     const orders = await OrderModel.findByUser(
       req.user.id,
@@ -39,8 +42,9 @@ router.get('/my-orders', authenticateToken, requireCustomer, async (req: any, re
 });
 
 // Get order by ID
-router.get('/:id', authenticateToken, async (req: any, res) => {
+router.get('/:id', authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
+    if (!req.user) return res.status(401).json({ error: 'Authentication required' });
     const { id } = req.params;
     const orderWithItems = await OrderModel.getOrderWithItems(id);
 
@@ -49,7 +53,7 @@ router.get('/:id', authenticateToken, async (req: any, res) => {
     }
 
     // Check if user has permission to view this order
-    if (req.user.role !== 'admin' && orderWithItems.order.user_id !== req.user.id) {
+    if (req.user!.role !== 'admin' && orderWithItems.order.user_id !== req.user!.id) {
       return res.status(403).json({ error: 'Permission denied' });
     }
 
@@ -61,7 +65,7 @@ router.get('/:id', authenticateToken, async (req: any, res) => {
 });
 
 // Get all orders (admin only)
-router.get('/', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
   try {
     const {
       status,
@@ -86,7 +90,7 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
 });
 
 // Update order status (admin only)
-router.patch('/:id/status', authenticateToken, requireAdmin, async (req, res) => {
+router.patch('/:id/status', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { status, tracking_number, estimated_delivery, notes } = req.body;
@@ -119,7 +123,7 @@ router.patch('/:id/status', authenticateToken, requireAdmin, async (req, res) =>
 });
 
 // Update payment status (admin only)
-router.patch('/:id/payment', authenticateToken, requireAdmin, async (req, res) => {
+router.patch('/:id/payment', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { payment_status, payment_intent_id } = req.body;
@@ -145,7 +149,7 @@ router.patch('/:id/payment', authenticateToken, requireAdmin, async (req, res) =
 });
 
 // Get order statistics (admin only)
-router.get('/stats/overview', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/stats/overview', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
   try {
     const stats = await OrderModel.getOrderStats();
     res.json(stats);
@@ -156,7 +160,7 @@ router.get('/stats/overview', authenticateToken, requireAdmin, async (req, res) 
 });
 
 // Get recent orders (admin only)
-router.get('/recent/list', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/recent/list', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { limit = 10 } = req.query;
     const orders = await OrderModel.getRecentOrders(parseInt(limit as string));
@@ -168,10 +172,11 @@ router.get('/recent/list', authenticateToken, requireAdmin, async (req, res) => 
 });
 
 // Cancel order
-router.patch('/:id/cancel', authenticateToken, requireCustomer, async (req: any, res) => {
+router.patch('/:id/cancel', authenticateToken, requireCustomer, async (req: AuthRequest<{ reason?: string }>, res: Response) => {
   try {
+    if (!req.user) return res.status(401).json({ error: 'Authentication required' });
     const { id } = req.params;
-    const { reason } = req.body;
+    const { reason } = (req as Request).body as { reason?: string };
 
     // Check if order exists and belongs to user
     const order = await OrderModel.findById(id);
