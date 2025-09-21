@@ -49,12 +49,12 @@ const FlowerElement: React.FC<{
       {...attributes}
     >
       {/* Flower representation */}
-      <div 
-        className="w-16 h-16 rounded-full border-2 border-white shadow-lg flex items-center justify-center"
+      <div
+        className="w-12 h-12 rounded-full border-2 border-white shadow-lg flex items-center justify-center"
         style={{ backgroundColor: item.color }}
       >
         <span className="text-white text-xs font-bold">
-          {item.name.substring(0, 2).toUpperCase()}
+          {item.name.substring(0, 1).toUpperCase()}
         </span>
       </div>
 
@@ -130,28 +130,23 @@ export const BouquetCanvas: React.FC<BouquetCanvasProps> = ({
   }, [setBouquetItems]);
 
   return (
-    <Card className="p-6">
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold text-primary">Bouquet Canvas</h2>
-        <p className="text-sm text-muted-foreground">
-          Drop flowers here and arrange them to create your bouquet
-        </p>
-      </div>
-
+    <div className="flex flex-col items-center">
+      {/* Canvas Area - Circular */}
       <div
         ref={setNodeRef}
         className={cn(
-          "relative bg-gradient-to-br from-cream/50 to-sage/30 border-2 border-dashed rounded-lg",
-          "min-h-[500px] overflow-hidden transition-colors",
+          "relative bg-gradient-to-br from-cream/50 to-sage/30 border-4 border-dashed rounded-full",
+          "w-96 h-96 overflow-hidden transition-colors flex items-center justify-center",
           isOver ? "border-primary bg-primary/5" : "border-muted",
           bouquetItems.length === 0 && "flex items-center justify-center"
         )}
       >
         {bouquetItems.length === 0 ? (
           <div className="text-center text-muted-foreground">
-            <div className="text-4xl mb-4">🌸</div>
-            <p className="text-lg font-medium">Drop flowers here to start building</p>
-            <p className="text-sm">Drag flowers from the inventory panel</p>
+            <div className="text-6xl mb-4">🌸</div>
+            <p className="text-xl font-medium">YOUR BOUQUET</p>
+            <p className="text-sm mt-2">Drop flowers here to start building</p>
+            <p className="text-xs">Drag flowers from the inventory panel</p>
           </div>
         ) : (
           <>
@@ -165,6 +160,13 @@ export const BouquetCanvas: React.FC<BouquetCanvasProps> = ({
                 </defs>
                 <rect width="100%" height="100%" fill="url(#grid)" />
               </svg>
+            </div>
+
+            {/* YOUR BOUQUET text overlay */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="text-center text-muted-foreground/60">
+                <p className="text-lg font-medium">YOUR BOUQUET</p>
+              </div>
             </div>
 
             {/* Render flowers */}
@@ -181,10 +183,10 @@ export const BouquetCanvas: React.FC<BouquetCanvasProps> = ({
       </div>
 
       {bouquetItems.length > 0 && (
-        <div className="mt-4 text-sm text-muted-foreground">
+        <div className="mt-4 text-sm text-muted-foreground text-center max-w-xs">
           <p>💡 Click and drag flowers to reposition • Hover for rotation and scaling controls</p>
         </div>
       )}
-    </Card>
+    </div>
   );
 };

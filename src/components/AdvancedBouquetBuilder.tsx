@@ -320,59 +320,6 @@ export const AdvancedBouquetBuilder: React.FC = () => {
     }
   }, [history, historyIndex]);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        switch (e.key) {
-          case 'z':
-            e.preventDefault();
-            if (e.shiftKey) {
-              redo();
-            } else {
-              undo();
-            }
-            break;
-          case 'y':
-            e.preventDefault();
-            redo();
-            break;
-          case 'g':
-            e.preventDefault();
-            setShowGrid(!showGrid);
-            break;
-        }
-      }
-      
-      if (selectedItem) {
-        switch (e.key) {
-          case 'Delete':
-          case 'Backspace':
-            removeItem(selectedItem);
-            break;
-          case 'ArrowUp':
-            e.preventDefault();
-            updateItem(selectedItem, { y: canvasItems.find(i => i.canvasId === selectedItem)!.y - 5 });
-            break;
-          case 'ArrowDown':
-            e.preventDefault();
-            updateItem(selectedItem, { y: canvasItems.find(i => i.canvasId === selectedItem)!.y + 5 });
-            break;
-          case 'ArrowLeft':
-            e.preventDefault();
-            updateItem(selectedItem, { x: canvasItems.find(i => i.canvasId === selectedItem)!.x - 5 });
-            break;
-          case 'ArrowRight':
-            e.preventDefault();
-            updateItem(selectedItem, { x: canvasItems.find(i => i.canvasId === selectedItem)!.x + 5 });
-            break;
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedItem, canvasItems, showGrid, undo, redo]);
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     setActiveId(String(event.active.id));
@@ -429,6 +376,60 @@ export const AdvancedBouquetBuilder: React.FC = () => {
       saveToHistory();
     }
   }, [canvasItems, saveToHistory]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+          case 'z':
+            e.preventDefault();
+            if (e.shiftKey) {
+              redo();
+            } else {
+              undo();
+            }
+            break;
+          case 'y':
+            e.preventDefault();
+            redo();
+            break;
+          case 'g':
+            e.preventDefault();
+            setShowGrid(!showGrid);
+            break;
+        }
+      }
+
+      if (selectedItem) {
+        switch (e.key) {
+          case 'Delete':
+          case 'Backspace':
+            removeItem(selectedItem);
+            break;
+          case 'ArrowUp':
+            e.preventDefault();
+            updateItem(selectedItem, { y: canvasItems.find(i => i.canvasId === selectedItem)!.y - 5 });
+            break;
+          case 'ArrowDown':
+            e.preventDefault();
+            updateItem(selectedItem, { y: canvasItems.find(i => i.canvasId === selectedItem)!.y + 5 });
+            break;
+          case 'ArrowLeft':
+            e.preventDefault();
+            updateItem(selectedItem, { x: canvasItems.find(i => i.canvasId === selectedItem)!.x - 5 });
+            break;
+          case 'ArrowRight':
+            e.preventDefault();
+            updateItem(selectedItem, { x: canvasItems.find(i => i.canvasId === selectedItem)!.x + 5 });
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedItem, canvasItems, showGrid, undo, redo, removeItem, updateItem]);
 
   const clearBouquet = useCallback(() => {
     setCanvasItems([]);

@@ -14,6 +14,47 @@ import { Save, Share2, RotateCcw, ShoppingCart, Download, Copy } from 'lucide-re
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
+import { useDraggable } from '@dnd-kit/core';
+import { cn } from '@/lib/utils';
+
+const DraggableFlower: React.FC<{ flower: FlowerItem }> = ({ flower }) => {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: flower.id,
+  });
+
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+  } : undefined;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...listeners}
+      {...attributes}
+      className={cn(
+        "cursor-grab active:cursor-grabbing",
+        isDragging && "opacity-50"
+      )}
+    >
+      <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
+        <div
+          className="w-10 h-10 rounded-full flex-shrink-0 border-2 border-white shadow-sm"
+          style={{ backgroundColor: flower.color }}
+        />
+        <div className="flex-1 min-w-0">
+          <h4 className="font-medium text-sm truncate">{flower.name}</h4>
+          <p className="text-xs text-muted-foreground truncate">{flower.nameAr}</p>
+          <div className="flex items-center justify-between mt-1">
+            <span className="text-sm font-semibold text-primary">
+              {flower.price} SAR
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export interface FlowerItem {
   id: string;
@@ -268,20 +309,43 @@ export const BouquetBuilder: React.FC = () => {
   const ribbonOptions: RibbonOption[] = [
     { id: 'satin-red', name: 'Satin Red', price: 4, description: 'Classic red satin', color: '#DC143C', width: '1 inch', bowStyle: 'Classic' },
     { id: 'satin-white', name: 'Satin White', price: 4, description: 'Pure white satin', color: '#FFFFFF', width: '1 inch', bowStyle: 'Classic' },
+    { id: 'satin-pink', name: 'Satin Pink', price: 4, description: 'Soft pink satin', color: '#FFB6C1', width: '1 inch', bowStyle: 'Classic' },
+    { id: 'satin-blue', name: 'Satin Blue', price: 4, description: 'Gentle blue satin', color: '#87CEEB', width: '1 inch', bowStyle: 'Classic' },
     { id: 'satin-gold', name: 'Satin Gold', price: 6, description: 'Metallic gold', color: '#FFD700', width: '1 inch', bowStyle: 'Classic' },
+    { id: 'satin-silver', name: 'Satin Silver', price: 6, description: 'Metallic silver', color: '#C0C0C0', width: '1 inch', bowStyle: 'Classic' },
+    { id: 'satin-rose-gold', name: 'Satin Rose Gold', price: 7, description: 'Metallic rose gold', color: '#E0BFB8', width: '1 inch', bowStyle: 'Classic' },
     { id: 'silk-pink', name: 'Silk Pink', price: 8, description: 'Luxury silk ribbon', color: '#FFB6C1', width: '1.5 inch', bowStyle: 'Floral' },
+    { id: 'silk-ivory', name: 'Silk Ivory', price: 8, description: 'Luxury silk ribbon', color: '#FFFFF0', width: '1.5 inch', bowStyle: 'Floral' },
     { id: 'lace-ivory', name: 'Lace Ivory', price: 10, description: 'Delicate lace ribbon', color: '#FFFFF0', width: '2 inch', bowStyle: 'Elegant' },
+    { id: 'lace-white', name: 'Lace White', price: 10, description: 'Delicate lace ribbon', color: '#FFFFFF', width: '2 inch', bowStyle: 'Elegant' },
+    { id: 'burlap-natural', name: 'Burlap Natural', price: 5, description: 'Rustic burlap ribbon', color: '#DEB887', width: '1.5 inch', bowStyle: 'Rustic' },
+    { id: 'burlap-jute', name: 'Burlap Jute', price: 5, description: 'Natural jute burlap', color: '#D2B48C', width: '1.5 inch', bowStyle: 'Rustic' },
     { id: 'organza-silver', name: 'Organza Silver', price: 7, description: 'Sheer organza', color: '#C0C0C0', width: '1 inch', bowStyle: 'Modern' },
+    { id: 'organza-gold', name: 'Organza Gold', price: 7, description: 'Sheer organza', color: '#FFD700', width: '1 inch', bowStyle: 'Modern' },
+    { id: 'organza-white', name: 'Organza White', price: 7, description: 'Sheer organza', color: '#FFFFFF', width: '1 inch', bowStyle: 'Modern' },
     { id: 'velvet-black', name: 'Velvet Black', price: 9, description: 'Rich velvet ribbon', color: '#000000', width: '1.5 inch', bowStyle: 'Classic' },
+    { id: 'velvet-red', name: 'Velvet Red', price: 9, description: 'Rich velvet ribbon', color: '#DC143C', width: '1.5 inch', bowStyle: 'Classic' },
+    { id: 'velvet-navy', name: 'Velvet Navy', price: 9, description: 'Rich velvet ribbon', color: '#000080', width: '1.5 inch', bowStyle: 'Classic' },
   ];
 
   const accessoryOptions: AccessoryOption[] = [
     { id: 'greeting-card', name: 'Greeting Card', price: 3, description: 'Personalized message card', type: 'card' },
+    { id: 'wedding-card', name: 'Wedding Card', price: 5, description: 'Elegant wedding message card', type: 'card' },
+    { id: 'birthday-card', name: 'Birthday Card', price: 4, description: 'Festive birthday card', type: 'card' },
     { id: 'heart-charm', name: 'Heart Charm', price: 5, description: 'Silver heart charm', type: 'charm' },
+    { id: 'butterfly-charm', name: 'Butterfly Charm', price: 6, description: 'Delicate butterfly charm', type: 'charm' },
+    { id: 'star-charm', name: 'Star Charm', price: 5, description: 'Shining star charm', type: 'charm' },
     { id: 'teddy-bear', name: 'Teddy Bear', price: 15, description: 'Small plush teddy bear', type: 'plush' },
+    { id: 'bunny-rabbit', name: 'Bunny Rabbit', price: 12, description: 'Cute plush bunny rabbit', type: 'plush' },
+    { id: 'koala-bear', name: 'Koala Bear', price: 14, description: 'Adorable plush koala', type: 'plush' },
     { id: 'balloon-heart', name: 'Heart Balloon', price: 8, description: 'Red heart balloon', type: 'balloon' },
+    { id: 'balloon-star', name: 'Star Balloon', price: 7, description: 'Gold star balloon', type: 'balloon' },
+    { id: 'balloon-circle', name: 'Circle Balloon', price: 6, description: 'Colorful circle balloon', type: 'balloon' },
     { id: 'crystal-brooch', name: 'Crystal Brooch', price: 12, description: 'Elegant crystal brooch', type: 'brooch' },
+    { id: 'pearl-brooch', name: 'Pearl Brooch', price: 15, description: 'Classic pearl brooch', type: 'brooch' },
+    { id: 'flower-brooch', name: 'Flower Brooch', price: 10, description: 'Delicate flower brooch', type: 'brooch' },
     { id: 'led-lights', name: 'LED Lights', price: 10, description: 'Battery-powered LED string', type: 'light' },
+    { id: 'fairy-lights', name: 'Fairy Lights', price: 12, description: 'Warm fairy light string', type: 'light' },
   ];
 
   const selectedWrappingOption = wrappingOptions.find(w => w.id === selectedWrapping);
@@ -307,12 +371,18 @@ export const BouquetBuilder: React.FC = () => {
       // Check if it's a flower from inventory
       const flower = flowers.find(f => f.id === active.id);
       if (flower && flower.stock > 0) {
+        // Position flowers within the circular canvas (radius of 192px, center at 192px)
+        const canvasRadius = 192;
+        const canvasCenter = 192;
+        const angle = Math.random() * 2 * Math.PI;
+        const distance = Math.random() * (canvasRadius - 60) + 30; // Keep flowers away from edges
+
         const newItem: BouquetItem = {
           ...flower,
           canvasId: `${flower.id}-${Date.now()}`,
-          x: Math.random() * 300 + 50,
-          y: Math.random() * 300 + 50,
-          rotation: 0,
+          x: canvasCenter + Math.cos(angle) * distance - 24, // -24 to center the flower element
+          y: canvasCenter + Math.sin(angle) * distance - 24, // -24 to center the flower element
+          rotation: Math.random() * 40 - 20, // Random rotation between -20 and +20 degrees
           scale: 1
         };
         setBouquetItems(prev => [...prev, newItem]);
@@ -357,16 +427,23 @@ export const BouquetBuilder: React.FC = () => {
 
     // Apply preset flowers
     const newItems: BouquetItem[] = [];
+    const canvasRadius = 192;
+    const canvasCenter = 192;
+
     preset.flowers.forEach((flowerConfig, index) => {
       const flower = flowers.find(f => f.id === flowerConfig.id);
       if (flower) {
         for (let i = 0; i < flowerConfig.quantity; i++) {
+          // Position flowers in a circular pattern for presets
+          const baseAngle = (index * 60 + i * 30) * (Math.PI / 180); // Convert to radians
+          const distance = 60 + (index * 20) + (i * 15); // Vary distance based on index and quantity
+
           newItems.push({
             ...flower,
             canvasId: `${flower.id}-${Date.now()}-${index}-${i}`,
-            x: 100 + (index * 60) + (i * 20),
-            y: 150 + (i * 30),
-            rotation: Math.random() * 20 - 10, // Slight random rotation
+            x: canvasCenter + Math.cos(baseAngle) * distance - 24,
+            y: canvasCenter + Math.sin(baseAngle) * distance - 24,
+            rotation: Math.random() * 40 - 20, // Random rotation between -20 and +20 degrees
             scale: 1
           });
         }
@@ -488,284 +565,152 @@ export const BouquetBuilder: React.FC = () => {
         </div>
 
         <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          {/* Occasion Presets */}
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 text-primary">Choose an Occasion</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
-              {occasionPresets.map((preset) => (
-                <Card
-                  key={preset.id}
-                  className={`cursor-pointer transition-all hover:shadow-md ${
-                    selectedPreset === preset.id ? 'ring-2 ring-primary bg-primary/5' : ''
-                  }`}
-                  onClick={() => applyPreset(preset)}
-                >
-                  <CardContent className="p-4 text-center">
-                    <div className="text-3xl mb-2">{preset.icon}</div>
-                    <h3 className="font-semibold text-sm mb-1">{preset.name}</h3>
-                    <p className="text-xs text-muted-foreground">{preset.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            {selectedPreset && (
-              <div className="mt-4 text-center">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSelectedPreset(null)}
-                >
-                  Clear Preset Selection
-                </Button>
-              </div>
-            )}
-          </div>
+          {/* Main Layout - Three Column Design */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[600px]">
+            {/* Left Sidebar - Flowers */}
+            <div className="lg:col-span-3">
+              <Card className="h-full">
+                <CardContent className="p-4">
+                  <div className="space-y-6">
+                    {/* Flowers Section */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4 text-primary">FLOWERS</h3>
+                      <div className="space-y-3">
+                        {flowers.slice(0, 3).map((flower) => (
+                          <DraggableFlower key={flower.id} flower={flower} />
+                        ))}
+                      </div>
+                    </div>
 
-          <div className="grid lg:grid-cols-4 gap-8">
-            {/* Flower Inventory */}
-            <div className="lg:col-span-1">
-              <FlowerInventory flowers={flowers} />
-            </div>
-
-            {/* Canvas Area */}
-            <div className="lg:col-span-2">
-              <BouquetCanvas 
-                bouquetItems={bouquetItems}
-                onRemoveItem={removeItem}
-                setBouquetItems={setBouquetItems}
-              />
-            </div>
-
-            {/* Pricing & Controls */}
-            <div className="lg:col-span-1 space-y-6">
-              {/* Price Summary */}
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Price Summary</h3>
-
-                <div className="space-y-2 mb-4">
-                  <div className="flex justify-between">
-                    <span>Base bouquet</span>
-                    <span>{basePrice} SAR</span>
+                    {/* Binding Point Section */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4 text-primary">BINDING POINT</h3>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { id: 'bind1', name: 'Pearl Pin', color: '#E5E7EB' },
+                          { id: 'bind2', name: 'Gold Pin', color: '#F59E0B' },
+                          { id: 'bind3', name: 'Silver Pin', color: '#9CA3AF' },
+                          { id: 'bind4', name: 'Rose Pin', color: '#EF4444' },
+                          { id: 'bind5', name: 'Crystal Pin', color: '#D1D5DB' },
+                          { id: 'bind6', name: 'Butterfly Pin', color: '#8B5CF6' },
+                          { id: 'bind7', name: 'Heart Pin', color: '#EC4899' },
+                          { id: 'bind8', name: 'Star Pin', color: '#F59E0B' },
+                          { id: 'bind9', name: 'Flower Pin', color: '#10B981' },
+                        ].map((binding) => (
+                          <div
+                            key={binding.id}
+                            className="w-8 h-8 rounded-full border-2 border-gray-300 cursor-pointer hover:border-primary transition-colors flex items-center justify-center"
+                            style={{ backgroundColor: binding.color }}
+                            title={binding.name}
+                          >
+                            <div className="w-3 h-3 bg-white rounded-full opacity-60" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-
-                  {bouquetItems.map((item) => (
-                    <div key={item.canvasId} className="flex justify-between text-sm">
-                      <span>{item.name}</span>
-                      <span>{item.price} SAR</span>
-                    </div>
-                  ))}
-
-                  {selectedWrappingOption && (
-                    <div className="flex justify-between text-sm">
-                      <span>Wrapping: {selectedWrappingOption.name}</span>
-                      <span>{selectedWrappingOption.price} SAR</span>
-                    </div>
-                  )}
-
-                  {selectedBaseOption && (
-                    <div className="flex justify-between text-sm">
-                      <span>Base: {selectedBaseOption.name}</span>
-                      <span>{selectedBaseOption.price} SAR</span>
-                    </div>
-                  )}
-
-                  {selectedRibbonOption && (
-                    <div className="flex justify-between text-sm">
-                      <span>Ribbon: {selectedRibbonOption.name}</span>
-                      <span>{selectedRibbonOption.price} SAR</span>
-                    </div>
-                  )}
-
-                  {selectedAccessoryOptions.map((acc) => (
-                    <div key={acc.id} className="flex justify-between text-sm">
-                      <span>Accessory: {acc.name}</span>
-                      <span>{acc.price} SAR</span>
-                    </div>
-                  ))}
-                </div>
-
-                <Separator />
-
-                <div className="flex justify-between font-semibold text-lg mt-4">
-                  <span>Total</span>
-                  <span>{totalPrice} SAR</span>
-                </div>
+                </CardContent>
               </Card>
+            </div>
 
-              {/* Wrapping Options */}
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Wrapping Paper</h3>
-                <div className="grid grid-cols-1 gap-3">
-                  {wrappingOptions.map((option) => (
-                    <div key={option.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
-                      <input
-                        type="radio"
-                        id={option.id}
-                        name="wrapping"
-                        value={option.id}
-                        checked={selectedWrapping === option.id}
-                        onChange={(e) => setSelectedWrapping(option.id)}
-                        className="text-primary"
-                      />
-                      <div
-                        className="w-6 h-6 rounded border-2 border-gray-300"
-                        style={{ backgroundColor: option.color }}
-                      />
-                      <div className="flex-1">
-                        <label htmlFor={option.id} className="font-medium cursor-pointer">
-                          {option.name}
-                        </label>
-                        <p className="text-sm text-muted-foreground">{option.description}</p>
-                      </div>
-                      <span className="font-semibold">{option.price} SAR</span>
-                    </div>
-                  ))}
-                </div>
-              </Card>
+            {/* Center Canvas */}
+            <div className="lg:col-span-6 flex flex-col items-center justify-center">
+              <div className="relative">
+                <BouquetCanvas
+                  bouquetItems={bouquetItems}
+                  onRemoveItem={removeItem}
+                  setBouquetItems={setBouquetItems}
+                />
 
-              {/* Base Options */}
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Base & Container</h3>
-                <div className="grid grid-cols-1 gap-3">
-                  {baseOptions.map((option) => (
-                    <div key={option.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
-                      <input
-                        type="radio"
-                        id={option.id}
-                        name="base"
-                        value={option.id}
-                        checked={selectedBase === option.id}
-                        onChange={(e) => setSelectedBase(option.id)}
-                        className="text-primary"
-                      />
-                      <div
-                        className="w-6 h-6 rounded border-2 border-gray-300"
-                        style={{ backgroundColor: option.color }}
-                      />
-                      <div className="flex-1">
-                        <label htmlFor={option.id} className="font-medium cursor-pointer">
-                          {option.name}
-                        </label>
-                        <p className="text-sm text-muted-foreground">{option.description}</p>
-                      </div>
-                      <span className="font-semibold">{option.price} SAR</span>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-
-              {/* Ribbon Options */}
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Ribbon & Bow</h3>
-                <div className="grid grid-cols-1 gap-3">
-                  {ribbonOptions.map((option) => (
-                    <div key={option.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
-                      <input
-                        type="radio"
-                        id={option.id}
-                        name="ribbon"
-                        value={option.id}
-                        checked={selectedRibbon === option.id}
-                        onChange={(e) => setSelectedRibbon(option.id)}
-                        className="text-primary"
-                      />
-                      <div
-                        className="w-6 h-6 rounded border-2 border-gray-300"
-                        style={{ backgroundColor: option.color }}
-                      />
-                      <div className="flex-1">
-                        <label htmlFor={option.id} className="font-medium cursor-pointer">
-                          {option.name}
-                        </label>
-                        <p className="text-sm text-muted-foreground">
-                          {option.description} • {option.width} • {option.bowStyle} bow
-                        </p>
-                      </div>
-                      <span className="font-semibold">{option.price} SAR</span>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-
-              {/* Accessories */}
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Accessories</h3>
-                <div className="grid grid-cols-1 gap-3">
-                  {accessoryOptions.map((option) => (
-                    <div key={option.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
-                      <input
-                        type="checkbox"
-                        id={option.id}
-                        checked={selectedAccessories.includes(option.id)}
-                        onChange={(e) => {
-                          if (selectedAccessories.includes(option.id)) {
-                            setSelectedAccessories(prev => prev.filter(id => id !== option.id));
-                          } else {
-                            setSelectedAccessories(prev => [...prev, option.id]);
-                          }
-                        }}
-                        className="text-primary"
-                      />
-                      <div className="flex-1">
-                        <label htmlFor={option.id} className="font-medium cursor-pointer">
-                          {option.name}
-                        </label>
-                        <p className="text-sm text-muted-foreground">{option.description}</p>
-                      </div>
-                      <span className="font-semibold">{option.price} SAR</span>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-
-              {/* Action Buttons */}
-              <div className="space-y-3">
-                <Button onClick={addToCart} className="w-full" size="lg">
-                  <ShoppingCart className="mr-2 h-5 w-5" />
-                  Add to Cart - {totalPrice} SAR
-                </Button>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <Button onClick={saveBouquet} variant="outline">
+                {/* Action Buttons at Bottom */}
+                <div className="flex gap-4 mt-6">
+                  <Button variant="outline" size="lg">
                     <Save className="mr-2 h-4 w-4" />
-                    Save
+                    SAVE DESIGN
                   </Button>
-                  <Button onClick={shareBouquet} variant="outline">
-                    <Share2 className="mr-2 h-4 w-4" />
-                    Share
+                  <Button size="lg" className="bg-primary hover:bg-primary/90">
+                    ORDER NOW
                   </Button>
                 </div>
-                
-                <Button onClick={clearBouquet} variant="destructive" className="w-full">
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                  Clear Bouquet
-                </Button>
               </div>
+            </div>
 
-              {/* Bouquet Stats */}
-              {bouquetItems.length > 0 && (
-                <Card className="p-4">
-                  <h4 className="font-medium mb-2">Bouquet Stats</h4>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span>Total flowers:</span>
-                      <Badge variant="secondary">{bouquetItems.length}</Badge>
+            {/* Right Sidebar - Accessories */}
+            <div className="lg:col-span-3">
+              <Card className="h-full">
+                <CardContent className="p-4">
+                  <div className="space-y-6">
+                    {/* Ribbon Section */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4 text-primary">RIBBON</h3>
+                      <div className="space-y-3">
+                        {ribbonOptions.slice(0, 4).map((ribbon) => (
+                          <div
+                            key={ribbon.id}
+                            className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-muted/50 cursor-pointer"
+                            onClick={() => setSelectedRibbon(ribbon.id)}
+                          >
+                            <div
+                              className="w-6 h-6 rounded border-2 border-gray-300"
+                              style={{ backgroundColor: ribbon.color }}
+                            />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium">{ribbon.name}</p>
+                              <p className="text-xs text-muted-foreground">{ribbon.width}</p>
+                            </div>
+                            <span className="text-sm font-semibold">{ribbon.price} SAR</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Focal flowers:</span>
-                      <Badge variant="secondary">
-                        {bouquetItems.filter(item => item.category === 'focal').length}
-                      </Badge>
+
+                    {/* Holder Section */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4 text-primary">HOLDER</h3>
+                      <div className="grid grid-cols-2 gap-2">
+                        {baseOptions.slice(0, 4).map((holder) => (
+                          <div
+                            key={holder.id}
+                            className="flex flex-col items-center p-2 border rounded-lg hover:bg-muted/50 cursor-pointer"
+                            onClick={() => setSelectedBase(holder.id)}
+                          >
+                            <div
+                              className="w-12 h-8 rounded border-2 border-gray-300 mb-2"
+                              style={{ backgroundColor: holder.color }}
+                            />
+                            <p className="text-xs text-center">{holder.name}</p>
+                            <span className="text-xs font-semibold">{holder.price} SAR</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Fillers:</span>
-                      <Badge variant="secondary">
-                        {bouquetItems.filter(item => item.category === 'filler').length}
-                      </Badge>
+
+                    {/* Wrapper Section */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4 text-primary">WRAPPER</h3>
+                      <div className="space-y-3">
+                        {wrappingOptions.slice(0, 4).map((wrapper) => (
+                          <div
+                            key={wrapper.id}
+                            className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-muted/50 cursor-pointer"
+                            onClick={() => setSelectedWrapping(wrapper.id)}
+                          >
+                            <div
+                              className="w-8 h-8 rounded border-2 border-gray-300"
+                              style={{ backgroundColor: wrapper.color }}
+                            />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium">{wrapper.name}</p>
+                              <p className="text-xs text-muted-foreground">{wrapper.description}</p>
+                            </div>
+                            <span className="text-sm font-semibold">{wrapper.price} SAR</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </Card>
-              )}
+                </CardContent>
+              </Card>
             </div>
           </div>
 
@@ -773,9 +718,9 @@ export const BouquetBuilder: React.FC = () => {
             {activeId ? (
               activeId.startsWith('canvas-') ? (
                 // Canvas item being repositioned
-                <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center">
+                <div className="w-14 h-14 bg-primary/20 rounded-full flex items-center justify-center">
                   <div
-                    className="w-12 h-12 rounded-full"
+                    className="w-10 h-10 rounded-full"
                     style={{
                       backgroundColor: bouquetItems.find(item => `canvas-${item.canvasId}` === activeId)?.color || '#gray'
                     }}
@@ -783,9 +728,9 @@ export const BouquetBuilder: React.FC = () => {
                 </div>
               ) : (
                 // Flower from inventory
-                <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center">
+                <div className="w-14 h-14 bg-primary/20 rounded-full flex items-center justify-center">
                   <div
-                    className="w-12 h-12 rounded-full"
+                    className="w-10 h-10 rounded-full"
                     style={{
                       backgroundColor: flowers.find(f => f.id === activeId)?.color || '#gray'
                     }}
@@ -795,70 +740,6 @@ export const BouquetBuilder: React.FC = () => {
             ) : null}
           </DragOverlay>
         </DndContext>
-
-        {/* Save Bouquet Dialog */}
-        <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Save Bouquet</DialogTitle>
-              <DialogDescription>
-                Give your bouquet a name and description to save it for later
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="bouquetName">Bouquet Name</Label>
-                <Input
-                  id="bouquetName"
-                  value={bouquetName}
-                  onChange={(e) => setBouquetName(e.target.value)}
-                  placeholder="Enter bouquet name"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="bouquetDescription">Description (Optional)</Label>
-                <Textarea
-                  id="bouquetDescription"
-                  value={bouquetDescription}
-                  onChange={(e) => setBouquetDescription(e.target.value)}
-                  placeholder="Describe your bouquet..."
-                  rows={3}
-                />
-              </div>
-
-              <div className="bg-muted p-3 rounded-lg">
-                <div className="text-sm text-muted-foreground">
-                  <p><strong>Flowers:</strong> {bouquetItems.length}</p>
-                  <p><strong>Wrapping:</strong> {selectedWrappingOption?.name}</p>
-                  <p><strong>Base:</strong> {selectedBaseOption?.name}</p>
-                  <p><strong>Ribbon:</strong> {selectedRibbonOption?.name}</p>
-                  {selectedAccessoryOptions.length > 0 && (
-                    <p><strong>Accessories:</strong> {selectedAccessoryOptions.length}</p>
-                  )}
-                  <p><strong>Total Price:</strong> {totalPrice} SAR</p>
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowSaveDialog(false)}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSaveBouquet}
-                  className="flex-1"
-                >
-                  Save Bouquet
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );
