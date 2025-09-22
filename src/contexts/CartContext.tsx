@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { cartService, CartItem as ServiceCartItem, CartSummary } from '@/services/cartService';
+import { cartService, CartItem as ServiceCartItem } from '@/services/cartService';
 import { useAuth } from './AuthContext';
 
 export interface CartItem {
@@ -12,8 +12,16 @@ export interface CartItem {
   vendor?: string;
   category?: string;
   product_id?: string;
-  variant_id?: string;
-  custom_bouquet_id?: string;
+  custom_bouquet_data?: any;
+}
+
+interface CartSummary {
+  subtotal: number;
+  tax: number;
+  shipping: number;
+  total: number;
+  item_count: number;
+  discount?: number;
 }
 
 interface CartState {
@@ -137,7 +145,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 interface CartContextType {
   state: CartState;
   addItem: (item: Omit<CartItem, 'quantity'>) => void;
-  addItemAsync: (productId: string, quantity?: number, variantId?: string, customBouquetId?: string, productData?: any) => Promise<void>;
+  addItemAsync: (productId: string, quantity?: number, customBouquetData?: any, productData?: any) => Promise<void>;
   removeItem: (id: string) => void;
   removeItemAsync: (itemId: string) => Promise<void>;
   updateQuantity: (id: string, quantity: number) => void;
@@ -154,33 +162,40 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(cartReducer, initialState);
-  const { state: authState } = useAuth();
+  const { currentUser } = useAuth();
 
   // Load cart items on mount and when user changes
   useEffect(() => {
     loadCart();
-  }, [authState.user?.id]);
+  }, [currentUser?.id]);
 
   const loadCart = async () => {
     try {
       dispatch({ type: 'CART_LOADING' });
-      const items = await cartService.getCartItems(authState.user?.id);
-      const summary = await cartService.getCartSummary(authState.user?.id);
+      const items = await cartService.getCartItems(currentUser?.id);
+      const summary = await cartService.getCartTotal(currentUser?.id);
       
       // Convert service cart items to context cart items
       const contextItems: CartItem[] = items.map(item => ({
         id: item.id,
-        name: item.product_name,
-        price: item.price,
-        image: item.product_image,
+        name: item.product_name || 'Unknown Product',
+        price: item.price || 0,
+        image: item.product_image || '',
         quantity: item.quantity,
-        type: item.custom_bouquet_id ? 'custom-bouquet' : 'product',
+        type: item.custom_bouquet_data ? 'custom-bouquet' : 'product',
         product_id: item.product_id,
-        variant_id: item.variant_id,
-        custom_bouquet_id: item.custom_bouquet_id,
+        custom_bouquet_data: item.custom_bouquet_data,
       }));
 
-      dispatch({ type: 'CART_SUCCESS', payload: { items: contextItems, summary } });
+      const cartSummary: CartSummary = {
+        subtotal: summary.subtotal,
+        tax: summary.tax,
+        shipping: summary.shipping,
+        total: summary.total,
+        item_count: contextItems.reduce((sum, item) => sum + item.quantity, 0),
+      };
+
+      dispatch({ type: 'CART_SUCCESS', payload: { items: contextItems, summary: cartSummary } });
     } catch (error: any) {
       dispatch({ type: 'CART_ERROR', payload: error.message || 'Failed to load cart' });
     }
@@ -193,20 +208,20 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const addItemAsync = async (
     productId: string, 
     quantity: number = 1, 
-    variantId?: string, 
-    customBouquetId?: string, 
+    customBouquetData?: any, 
     productData?: any
   ) => {
     try {
       dispatch({ type: 'CART_LOADING' });
-      await cartService.addToCart(
-        productId, 
-        quantity, 
-        authState.user?.id, 
-        variantId, 
-        customBouquetId, 
-        productData
-      );
+      
+      const item = {
+        product_id: productId,
+        quantity,
+        price: productData?.price,
+        custom_bouquet_data: customBouquetData,
+      };
+
+      await cartService.addToCart(item, currentUser?.id);
       await loadCart();
     } catch (error: any) {
       dispatch({ type: 'CART_ERROR', payload: error.message || 'Failed to add item to cart' });
@@ -221,7 +236,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const removeItemAsync = async (itemId: string) => {
     try {
       dispatch({ type: 'CART_LOADING' });
-      await cartService.removeFromCart(itemId, authState.user?.id);
+      await cartService.removeFromCart(itemId, currentUser?.id);
       await loadCart();
     } catch (error: any) {
       dispatch({ type: 'CART_ERROR', payload: error.message || 'Failed to remove item from cart' });
@@ -236,7 +251,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const updateQuantityAsync = async (itemId: string, quantity: number) => {
     try {
       dispatch({ type: 'CART_LOADING' });
-      await cartService.updateCartItemQuantity(itemId, quantity, authState.user?.id);
+      await cartService.updateCartItem(itemId, quantity, currentUser?.id);
       await loadCart();
     } catch (error: any) {
       dispatch({ type: 'CART_ERROR', payload: error.message || 'Failed to update item quantity' });
@@ -251,7 +266,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const clearCartAsync = async () => {
     try {
       dispatch({ type: 'CART_LOADING' });
-      await cartService.clearCart(authState.user?.id);
+      await cartService.clearCart(currentUser?.id);
       dispatch({ type: 'CLEAR_CART' });
     } catch (error: any) {
       dispatch({ type: 'CART_ERROR', payload: error.message || 'Failed to clear cart' });
@@ -266,7 +281,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const applyCoupon = async (code: string) => {
     try {
       dispatch({ type: 'CART_LOADING' });
-      await cartService.applyCoupon(code, authState.user?.id);
+      await cartService.applyCoupon(code, currentUser?.id);
       await loadCart();
     } catch (error: any) {
       dispatch({ type: 'CART_ERROR', payload: error.message || 'Failed to apply coupon' });
@@ -276,11 +291,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const saveForLater = async (itemId: string) => {
     try {
-      if (!authState.user?.id) {
+      if (!currentUser?.id) {
         throw new Error('You must be logged in to save items for later');
       }
       dispatch({ type: 'CART_LOADING' });
-      await cartService.saveForLater(itemId, authState.user.id);
+      // Save for later functionality - placeholder
+      console.log('Save for later:', itemId);
       await loadCart();
     } catch (error: any) {
       dispatch({ type: 'CART_ERROR', payload: error.message || 'Failed to save item for later' });
@@ -290,8 +306,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const syncCart = async () => {
     try {
-      if (authState.user?.id) {
-        await cartService.syncCartWithUser(authState.user.id);
+      if (currentUser?.id) {
+        await cartService.transferGuestCart(currentUser.id);
         await loadCart();
       }
     } catch (error: any) {

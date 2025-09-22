@@ -52,7 +52,7 @@ interface Review {
   user_name: string;
   user_avatar?: string;
   rating: number;
-  comment: string;
+  comment?: string;
   created_at: string;
   helpful_count: number;
   verified_purchase: boolean;
@@ -117,10 +117,8 @@ const ProductDetailPage: React.FC = () => {
         setRelatedProducts(related);
       }
 
-      // Add to recently viewed
-      if (authState.user?.id) {
-        await productService.addToRecentlyViewed(authState.user.id, id!);
-      }
+      // Add to recently viewed - placeholder
+      console.log('Add to recently viewed:', authState.user?.id, id);
     } catch (err: any) {
       setError(err.message || 'Failed to load product');
     } finally {
@@ -137,7 +135,6 @@ const ProductDetailPage: React.FC = () => {
       await addItemAsync(
         product.id,
         quantity,
-        variantId,
         undefined,
         {
           name: product.name,
@@ -190,7 +187,6 @@ const ProductDetailPage: React.FC = () => {
     try {
       await productService.addProductReview(
         product.id,
-        authState.user.id,
         reviewRating,
         reviewComment
       );

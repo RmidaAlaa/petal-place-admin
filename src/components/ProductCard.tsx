@@ -78,7 +78,6 @@ const ProductCard = ({
         id,
         1,
         undefined,
-        undefined,
         {
           name,
           price,

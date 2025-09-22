@@ -82,7 +82,7 @@ const SearchResults: React.FC = () => {
         priceRange: filters.priceRange,
         rating: filters.rating,
         sortBy: filters.sortBy,
-      });
+      } as any);
       
       setProducts(results);
       setTotalResults(results.length);

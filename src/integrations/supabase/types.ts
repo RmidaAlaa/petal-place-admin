@@ -55,6 +55,81 @@ export type Database = {
           },
         ]
       }
+      categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          slug: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          slug: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          slug?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          maximum_discount: number | null
+          minimum_amount: number | null
+          type: string
+          usage_limit: number | null
+          used_count: number | null
+          value: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          maximum_discount?: number | null
+          minimum_amount?: number | null
+          type: string
+          usage_limit?: number | null
+          used_count?: number | null
+          value: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          maximum_discount?: number | null
+          minimum_amount?: number | null
+          type?: string
+          usage_limit?: number | null
+          used_count?: number | null
+          value?: number
+        }
+        Relationships: []
+      }
       custom_bouquets: {
         Row: {
           category: string | null
@@ -333,6 +408,42 @@ export type Database = {
           stock_quantity?: number
           updated_at?: string
           weight?: number | null
+        }
+        Relationships: []
+      }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          helpful_count: number | null
+          id: string
+          product_id: string
+          rating: number
+          updated_at: string
+          user_id: string
+          verified_purchase: boolean | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          helpful_count?: number | null
+          id?: string
+          product_id: string
+          rating: number
+          updated_at?: string
+          user_id: string
+          verified_purchase?: boolean | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          helpful_count?: number | null
+          id?: string
+          product_id?: string
+          rating?: number
+          updated_at?: string
+          user_id?: string
+          verified_purchase?: boolean | null
         }
         Relationships: []
       }

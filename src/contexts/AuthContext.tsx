@@ -73,6 +73,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
 
 interface AuthContextType {
   state: AuthState;
+  currentUser: User | null;
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (userData: RegisterData) => Promise<void>;
   socialLogin: (provider: 'google' | 'facebook') => Promise<void>;
@@ -244,6 +245,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const value: AuthContextType = {
     state,
+    currentUser: state.user,
     login,
     register,
     socialLogin,
