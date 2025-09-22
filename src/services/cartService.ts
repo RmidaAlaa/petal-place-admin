@@ -2,29 +2,17 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface CartItem {
   id: string;
-  product_id: string;
   user_id?: string;
-  session_id?: string;
+  product_id?: string;
   quantity: number;
-  price: number;
-  product_name: string;
-  product_image: string;
-  product_sku: string;
-  variant_id?: string;
-  variant_name?: string;
-  custom_bouquet_id?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CartSummary {
-  items: CartItem[];
-  subtotal: number;
-  tax: number;
-  shipping: number;
-  discount: number;
-  total: number;
-  item_count: number;
+  price?: number;
+  custom_bouquet_data?: any;
+  created_at?: string;
+  updated_at?: string;
+  // Virtual fields for display
+  product_name?: string;
+  product_image?: string;
+  product_sku?: string;
 }
 
 export interface Coupon {
@@ -32,181 +20,156 @@ export interface Coupon {
   code: string;
   type: 'percentage' | 'fixed';
   value: number;
-  min_order_amount?: number;
-  max_discount?: number;
-  is_active: boolean;
-  expires_at?: string;
+  minimum_amount?: number;
+  maximum_discount?: number;
   usage_limit?: number;
   used_count: number;
+  expires_at?: string;
+  is_active: boolean;
+  created_at: string;
 }
 
 class CartService {
-  private readonly CART_STORAGE_KEY = 'cart_items';
-  private readonly SESSION_ID_KEY = 'session_id';
-
-  // Get or create session ID
-  private getSessionId(): string {
-    let sessionId = localStorage.getItem(this.SESSION_ID_KEY);
-    if (!sessionId) {
-      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      localStorage.setItem(this.SESSION_ID_KEY, sessionId);
-    }
-    return sessionId;
-  }
-
-  // Get cart items from local storage
-  private getLocalCartItems(): CartItem[] {
-    try {
-      const items = localStorage.getItem(this.CART_STORAGE_KEY);
-      return items ? JSON.parse(items) : [];
-    } catch {
-      return [];
-    }
-  }
-
-  // Save cart items to local storage
-  private saveLocalCartItems(items: CartItem[]): void {
-    localStorage.setItem(this.CART_STORAGE_KEY, JSON.stringify(items));
-  }
-
-  // Get cart items (from database if user is logged in, otherwise from localStorage)
+  // Get cart items for a user
   async getCartItems(userId?: string): Promise<CartItem[]> {
     try {
       if (userId) {
         // Get from database for logged-in users
         const { data, error } = await supabase
           .from('cart_items')
-          .select('*')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: true });
+          .select(`
+            *,
+            products (
+              name,
+              images,
+              sku
+            )
+          `)
+          .eq('user_id', userId);
 
         if (error) throw error;
-        return data || [];
+
+        // Transform data to match CartItem interface
+        const items: CartItem[] = data?.map((item: any) => ({
+          id: item.id,
+          user_id: item.user_id,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          price: item.price,
+          custom_bouquet_data: item.custom_bouquet_data,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          product_name: item.products?.name,
+          product_image: item.products?.images?.[0],
+          product_sku: item.products?.sku,
+        })) || [];
+
+        return items;
       } else {
         // Get from localStorage for guest users
         return this.getLocalCartItems();
       }
-    } catch (error: any) {
-      console.error('Failed to fetch cart items:', error);
-      // Fallback to localStorage
-      return this.getLocalCartItems();
+    } catch (error) {
+      console.error('Error fetching cart items:', error);
+      throw error;
     }
   }
 
   // Add item to cart
-  async addToCart(
-    productId: string,
-    quantity: number = 1,
-    userId?: string,
-    variantId?: string,
-    customBouquetId?: string,
-    productData?: {
-      name: string;
-      price: number;
-      image: string;
-      sku: string;
-      variantName?: string;
-    }
-  ): Promise<CartItem> {
+  async addToCart(cartItem: Omit<CartItem, 'id' | 'created_at' | 'updated_at'>, userId?: string): Promise<CartItem> {
     try {
-      const sessionId = this.getSessionId();
-      const cartItem: Omit<CartItem, 'id' | 'created_at' | 'updated_at'> = {
-        product_id: productId,
-        user_id: userId,
-        session_id: sessionId,
-        quantity,
-        price: productData?.price || 0,
-        product_name: productData?.name || '',
-        product_image: productData?.image || '',
-        product_sku: productData?.sku || '',
-        variant_id: variantId,
-        variant_name: productData?.variantName,
-        custom_bouquet_id: customBouquetId
+      // Ensure required fields
+      const itemToAdd = {
+        user_id: userId || '',
+        product_id: cartItem.product_id || '',
+        quantity: cartItem.quantity,
+        price: cartItem.price,
+        custom_bouquet_data: cartItem.custom_bouquet_data,
       };
 
       if (userId) {
         // Add to database for logged-in users
         const { data, error } = await supabase
           .from('cart_items')
-          .insert(cartItem)
+          .insert(itemToAdd)
           .select()
           .single();
 
         if (error) throw error;
-        return data;
+        return {
+          id: data.id,
+          user_id: data.user_id,
+          product_id: data.product_id,
+          quantity: data.quantity,
+          price: data.price,
+          custom_bouquet_data: data.custom_bouquet_data,
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+        };
       } else {
         // Add to localStorage for guest users
         const existingItems = this.getLocalCartItems();
         const existingItem = existingItems.find(
-          item => item.product_id === productId && 
-                  item.variant_id === variantId && 
-                  item.custom_bouquet_id === customBouquetId
+          item => item.product_id === cartItem.product_id
         );
 
         if (existingItem) {
-          existingItem.quantity += quantity;
-          existingItem.updated_at = new Date().toISOString();
+          existingItem.quantity += cartItem.quantity;
         } else {
           const newItem: CartItem = {
+            id: `temp_${Date.now()}`,
             ...cartItem,
-            id: `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
           };
           existingItems.push(newItem);
         }
 
-        this.saveLocalCartItems(existingItems);
-        return existingItems[existingItems.length - 1];
+        this.setLocalCartItems(existingItems);
+        return existingItems.find(item => item.product_id === cartItem.product_id)!;
       }
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to add item to cart');
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      throw error;
     }
   }
 
   // Update cart item quantity
-  async updateCartItemQuantity(
-    itemId: string,
-    quantity: number,
-    userId?: string
-  ): Promise<CartItem> {
+  async updateCartItem(itemId: string, quantity: number, userId?: string): Promise<CartItem> {
     try {
       if (userId) {
-        // Update in database
+        // Update in database for logged-in users
         const { data, error } = await supabase
           .from('cart_items')
-          .update({ 
-            quantity,
-            updated_at: new Date().toISOString()
-          })
+          .update({ quantity })
           .eq('id', itemId)
           .eq('user_id', userId)
           .select()
           .single();
 
         if (error) throw error;
-        return data;
+        return {
+          id: data.id,
+          user_id: data.user_id,
+          product_id: data.product_id,
+          quantity: data.quantity,
+          price: data.price,
+          custom_bouquet_data: data.custom_bouquet_data,
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+        };
       } else {
-        // Update in localStorage
-        const items = this.getLocalCartItems();
-        const itemIndex = items.findIndex(item => item.id === itemId);
-        
-        if (itemIndex === -1) {
-          throw new Error('Cart item not found');
+        // Update in localStorage for guest users
+        const existingItems = this.getLocalCartItems();
+        const item = existingItems.find(item => item.id === itemId);
+        if (item) {
+          item.quantity = quantity;
+          this.setLocalCartItems(existingItems);
+          return item;
         }
-
-        if (quantity <= 0) {
-          items.splice(itemIndex, 1);
-        } else {
-          items[itemIndex].quantity = quantity;
-          items[itemIndex].updated_at = new Date().toISOString();
-        }
-
-        this.saveLocalCartItems(items);
-        return items[itemIndex];
+        throw new Error('Item not found');
       }
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to update cart item');
+    } catch (error) {
+      console.error('Error updating cart item:', error);
+      throw error;
     }
   }
 
@@ -214,7 +177,7 @@ class CartService {
   async removeFromCart(itemId: string, userId?: string): Promise<void> {
     try {
       if (userId) {
-        // Remove from database
+        // Remove from database for logged-in users
         const { error } = await supabase
           .from('cart_items')
           .delete()
@@ -223,13 +186,14 @@ class CartService {
 
         if (error) throw error;
       } else {
-        // Remove from localStorage
-        const items = this.getLocalCartItems();
-        const filteredItems = items.filter(item => item.id !== itemId);
-        this.saveLocalCartItems(filteredItems);
+        // Remove from localStorage for guest users
+        const existingItems = this.getLocalCartItems();
+        const filteredItems = existingItems.filter(item => item.id !== itemId);
+        this.setLocalCartItems(filteredItems);
       }
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to remove item from cart');
+    } catch (error) {
+      console.error('Error removing from cart:', error);
+      throw error;
     }
   }
 
@@ -237,7 +201,7 @@ class CartService {
   async clearCart(userId?: string): Promise<void> {
     try {
       if (userId) {
-        // Clear from database
+        // Clear database cart for logged-in users
         const { error } = await supabase
           .from('cart_items')
           .delete()
@@ -245,157 +209,86 @@ class CartService {
 
         if (error) throw error;
       } else {
-        // Clear from localStorage
-        localStorage.removeItem(this.CART_STORAGE_KEY);
+        // Clear localStorage cart for guest users
+        this.setLocalCartItems([]);
       }
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to clear cart');
+    } catch (error) {
+      console.error('Error clearing cart:', error);
+      throw error;
     }
   }
 
-  // Get cart summary
-  async getCartSummary(userId?: string): Promise<CartSummary> {
+  // Get cart total
+  async getCartTotal(userId?: string): Promise<{ subtotal: number; tax: number; shipping: number; total: number }> {
     try {
       const items = await this.getCartItems(userId);
-      
-      const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const subtotal = items.reduce((sum, item) => sum + ((item.price || 0) * item.quantity), 0);
       const tax = subtotal * 0.1; // 10% tax
       const shipping = subtotal > 100 ? 0 : 10; // Free shipping over $100
-      const discount = 0; // Will be calculated when coupon is applied
-      const total = subtotal + tax + shipping - discount;
+      const total = subtotal + tax + shipping;
 
-      return {
-        items,
-        subtotal,
-        tax,
-        shipping,
-        discount,
-        total,
-        item_count: items.reduce((sum, item) => sum + item.quantity, 0)
-      };
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to get cart summary');
+      return { subtotal, tax, shipping, total };
+    } catch (error) {
+      console.error('Error calculating cart total:', error);
+      throw error;
     }
   }
 
-  // Apply coupon
-  async applyCoupon(code: string, userId?: string): Promise<Coupon> {
+  // Transfer guest cart to user cart on login
+  async transferGuestCart(userId: string): Promise<void> {
     try {
-      const { data, error } = await supabase
-        .from('coupons')
-        .select('*')
-        .eq('code', code)
-        .eq('is_active', true)
-        .single();
+      const guestItems = this.getLocalCartItems();
+      if (guestItems.length === 0) return;
 
-      if (error) throw error;
-      if (!data) throw new Error('Invalid coupon code');
-
-      // Check if coupon is expired
-      if (data.expires_at && new Date(data.expires_at) < new Date()) {
-        throw new Error('Coupon has expired');
-      }
-
-      // Check usage limit
-      if (data.usage_limit && data.used_count >= data.usage_limit) {
-        throw new Error('Coupon usage limit exceeded');
-      }
-
-      return data;
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to apply coupon');
-    }
-  }
-
-  // Save cart for later (move to wishlist)
-  async saveForLater(itemId: string, userId: string): Promise<void> {
-    try {
-      // Get cart item
-      const { data: cartItem, error: fetchError } = await supabase
-        .from('cart_items')
-        .select('*')
-        .eq('id', itemId)
-        .eq('user_id', userId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      // Add to wishlist
-      const { error: wishlistError } = await supabase
-        .from('wishlist_items')
-        .insert({
-          user_id: userId,
-          product_id: cartItem.product_id,
-          variant_id: cartItem.variant_id,
-          custom_bouquet_id: cartItem.custom_bouquet_id
-        });
-
-      if (wishlistError) throw wishlistError;
-
-      // Remove from cart
-      await this.removeFromCart(itemId, userId);
-    } catch (error: any) {
-      throw new Error(error.message || 'Failed to save item for later');
-    }
-  }
-
-  // Sync local cart with database when user logs in
-  async syncCartWithUser(userId: string): Promise<void> {
-    try {
-      const localItems = this.getLocalCartItems();
-      
-      if (localItems.length === 0) return;
-
-      // Get existing cart items for user
-      const { data: existingItems } = await supabase
-        .from('cart_items')
-        .select('*')
-        .eq('user_id', userId);
-
-      // Merge local items with existing items
-      for (const localItem of localItems) {
-        const existingItem = existingItems?.find(
-          item => item.product_id === localItem.product_id && 
-                  item.variant_id === localItem.variant_id &&
-                  item.custom_bouquet_id === localItem.custom_bouquet_id
-        );
-
-        if (existingItem) {
-          // Update quantity
-          await supabase
-            .from('cart_items')
-            .update({ 
-              quantity: existingItem.quantity + localItem.quantity,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', existingItem.id);
-        } else {
-          // Add new item
-          await supabase
-            .from('cart_items')
-            .insert({
-              ...localItem,
-              user_id: userId,
-              session_id: null
-            });
+      // Insert guest items into database
+      for (const item of guestItems) {
+        if (item.product_id) {
+          await this.addToCart(item, userId);
         }
       }
 
-      // Clear local cart
-      localStorage.removeItem(this.CART_STORAGE_KEY);
-    } catch (error: any) {
-      console.error('Failed to sync cart:', error);
+      // Clear local storage
+      this.setLocalCartItems([]);
+    } catch (error) {
+      console.error('Error transferring guest cart:', error);
+      throw error;
     }
   }
 
-  // Get cart item count
-  async getCartItemCount(userId?: string): Promise<number> {
+  // Apply coupon (placeholder - will need coupons migration)
+  async applyCoupon(code: string, userId?: string): Promise<any> {
     try {
-      const summary = await this.getCartSummary(userId);
-      return summary.item_count;
-    } catch (error: any) {
-      console.error('Failed to get cart item count:', error);
-      return 0;
+      // This would need a coupons table in the database
+      // For now, return a mock response
+      return {
+        id: 'mock',
+        code,
+        type: 'percentage',
+        value: 10,
+        is_active: true
+      };
+    } catch (error) {
+      console.error('Error applying coupon:', error);
+      throw error;
+    }
+  }
+
+  // Local storage helpers
+  private getLocalCartItems(): CartItem[] {
+    try {
+      const items = localStorage.getItem('cart_items');
+      return items ? JSON.parse(items) : [];
+    } catch (error) {
+      console.error('Error reading local cart:', error);
+      return [];
+    }
+  }
+
+  private setLocalCartItems(items: CartItem[]): void {
+    try {
+      localStorage.setItem('cart_items', JSON.stringify(items));
+    } catch (error) {
+      console.error('Error saving local cart:', error);
     }
   }
 }

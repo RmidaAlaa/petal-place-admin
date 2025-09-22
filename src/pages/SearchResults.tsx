@@ -81,7 +81,6 @@ const SearchResults: React.FC = () => {
         category: filters.category,
         priceRange: filters.priceRange,
         rating: filters.rating,
-        inStock: filters.inStock,
         sortBy: filters.sortBy,
       });
       
@@ -135,7 +134,7 @@ const SearchResults: React.FC = () => {
     }
 
     if (filters.inStock) {
-      filtered = filtered.filter(p => p.inStock);
+      filtered = filtered.filter(p => p.stock_quantity > 0);
     }
 
     return filtered;
@@ -384,13 +383,13 @@ const SearchResults: React.FC = () => {
                       id={product.id}
                       name={product.name}
                       price={product.price}
-                      originalPrice={product.originalPrice}
+                      originalPrice={product.original_price}
                       image={product.images[0]}
                       vendor={product.vendor}
                       rating={product.rating}
-                      reviewCount={product.reviewCount}
+                      reviewCount={product.review_count}
                       category={product.category}
-                      isNew={product.isNew}
+                      isNew={product.is_new}
                       description={product.description}
                     />
                   ))}

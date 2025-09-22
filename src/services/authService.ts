@@ -82,7 +82,7 @@ class AuthService {
       const { error: profileError } = await supabase
         .from('user_profiles')
         .insert({
-          id: authData.user.id,
+          user_id: authData.user.id,
           email: data.email,
           first_name: data.first_name,
           last_name: data.last_name,
@@ -153,7 +153,7 @@ class AuthService {
         first_name: profile.first_name,
         last_name: profile.last_name,
         phone: profile.phone,
-        role: profile.role,
+        role: (profile.role || 'customer') as 'customer' | 'admin' | 'florist',
         is_active: profile.is_active,
         email_verified: profile.email_verified,
         created_at: profile.created_at,
@@ -245,7 +245,8 @@ class AuthService {
 
       const updatedUser: User = {
         ...currentUser,
-        ...updatedProfile
+        ...updatedProfile,
+        role: (updatedProfile.role || currentUser.role) as 'customer' | 'admin' | 'florist'
       };
 
       this.setUserData(updatedUser);

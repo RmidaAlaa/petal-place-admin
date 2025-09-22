@@ -671,7 +671,7 @@ const CheckoutPage: React.FC = () => {
                           <Checkbox
                             id="terms"
                             checked={termsAccepted}
-                            onCheckedChange={setTermsAccepted}
+                            onCheckedChange={(checked) => setTermsAccepted(checked === true)}
                           />
                           <Label htmlFor="terms" className="text-sm leading-relaxed">
                             I agree to the Terms of Service and Privacy Policy. I understand that my order is subject to availability and delivery times may vary.
@@ -707,7 +707,7 @@ const CheckoutPage: React.FC = () => {
                   >
                     {isProcessing ? (
                       <>
-                        <LoadingSpinner size="small" className="mr-2" />
+                        <LoadingSpinner size="sm" className="mr-2" />
                         Processing Order...
                       </>
                     ) : (
