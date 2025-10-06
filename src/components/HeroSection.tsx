@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import SearchBar from "./SearchBar";
+import AnimatedBackground from "./AnimatedBackground";
 import heroImage from "@/assets/hero-flowers.jpg";
 
 const HeroSection = () => {
@@ -23,9 +24,10 @@ const HeroSection = () => {
 
   return (
     <section className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
+      <AnimatedBackground />
       {/* Background Image with Overlay */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat z-0"
         style={{ backgroundImage: `url(${heroImage})` }}
       >
         <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-transparent" />

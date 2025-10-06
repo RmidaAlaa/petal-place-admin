@@ -6,6 +6,7 @@ import ProductCard from "@/components/ProductCard";
 import ProductFilters, { FilterOptions } from "@/components/ProductFilters";
 import TopHighlights from "@/components/TopHighlights";
 import GeolocationNotice from "@/components/GeolocationNotice";
+import AnimatedBackground from "@/components/AnimatedBackground";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Heart, Sparkles, Gift, Flower, Home, Building, Baby, Mail, Phone } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -224,11 +225,13 @@ const Marketplace = () => {
   }, [featuredProducts, filters]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      <GeolocationNotice />
-      <TopHighlights />
-      <HeroSection />
+    <div className="min-h-screen bg-background relative">
+      <AnimatedBackground />
+      <div className="relative z-10">
+        <Navigation />
+        <GeolocationNotice />
+        <TopHighlights />
+        <HeroSection />
       
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Offers & Discounts Section */}
@@ -337,7 +340,10 @@ const Marketplace = () => {
             Product Trends
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+            <Card 
+              className="hover:shadow-md transition-shadow cursor-pointer group"
+              onClick={() => setFilters(prev => ({ ...prev, search: 'Red Roses' }))}
+            >
               <CardContent className="p-4 text-center">
                 <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-red-200 transition-colors">
                   <Flower className="h-6 w-6 text-red-600" />
@@ -347,7 +353,10 @@ const Marketplace = () => {
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+            <Card 
+              className="hover:shadow-md transition-shadow cursor-pointer group"
+              onClick={() => setFilters(prev => ({ ...prev, search: "Valentine's" }))}
+            >
               <CardContent className="p-4 text-center">
                 <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-pink-200 transition-colors">
                   <Heart className="h-6 w-6 text-pink-600" />
@@ -357,7 +366,10 @@ const Marketplace = () => {
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+            <Card 
+              className="hover:shadow-md transition-shadow cursor-pointer group"
+              onClick={() => setFilters(prev => ({ ...prev, search: 'Gift Boxes' }))}
+            >
               <CardContent className="p-4 text-center">
                 <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-purple-200 transition-colors">
                   <Gift className="h-6 w-6 text-purple-600" />
@@ -367,7 +379,10 @@ const Marketplace = () => {
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+            <Card 
+              className="hover:shadow-md transition-shadow cursor-pointer group"
+              onClick={() => setFilters(prev => ({ ...prev, search: 'Sunflowers' }))}
+            >
               <CardContent className="p-4 text-center">
                 <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-yellow-200 transition-colors">
                   <Flower className="h-6 w-6 text-yellow-600" />
@@ -377,7 +392,10 @@ const Marketplace = () => {
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+            <Card 
+              className="hover:shadow-md transition-shadow cursor-pointer group"
+              onClick={() => setFilters(prev => ({ ...prev, search: 'Mixed' }))}
+            >
               <CardContent className="p-4 text-center">
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-green-200 transition-colors">
                   <Flower className="h-6 w-6 text-green-600" />
@@ -387,7 +405,10 @@ const Marketplace = () => {
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+            <Card 
+              className="hover:shadow-md transition-shadow cursor-pointer group"
+              onClick={() => setFilters(prev => ({ ...prev, search: 'Hydrangeas' }))}
+            >
               <CardContent className="p-4 text-center">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-blue-200 transition-colors">
                   <Flower className="h-6 w-6 text-blue-600" />
@@ -607,6 +628,7 @@ const Marketplace = () => {
           </Button>
         </div>
       </main>
+      </div>
     </div>
   );
 };
