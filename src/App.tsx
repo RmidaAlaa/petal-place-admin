@@ -87,8 +87,6 @@ const App = () => (
                                 </ProtectedRoute>
                               } />
                               <Route path="/login" element={<Login />} />
-                              {/* Temporary admin access for development */}
-                              <Route path="/admin-dev" element={<Admin />} />
                               <Route path="*" element={<NotFound />} />
                             </Routes>
                           </BrowserRouter>

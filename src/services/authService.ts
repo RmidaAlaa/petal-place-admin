@@ -66,9 +66,9 @@ class AuthService {
           data: {
             first_name: data.first_name,
             last_name: data.last_name,
-            phone: data.phone,
-            role: data.role || 'customer'
-          }
+            phone: data.phone
+          },
+          emailRedirectTo: `${window.location.origin}/`
         }
       });
 
@@ -87,7 +87,6 @@ class AuthService {
           first_name: data.first_name,
           last_name: data.last_name,
           phone: data.phone,
-          role: data.role || 'customer',
           is_active: true,
           email_verified: false
         });
@@ -95,6 +94,25 @@ class AuthService {
       if (profileError) {
         console.error('Profile creation error:', profileError);
       }
+
+      // Create user role in user_roles table
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: authData.user.id,
+          role: data.role || 'customer'
+        });
+
+      if (roleError) {
+        console.error('Role creation error:', roleError);
+      }
+
+      // Get user role
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', authData.user.id)
+        .single();
 
       const user: User = {
         id: authData.user.id,
@@ -140,20 +158,27 @@ class AuthService {
       const { data: profile, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('id', authData.user.id)
+        .eq('user_id', authData.user.id)
         .single();
 
       if (profileError) {
         throw new Error('Failed to fetch user profile');
       }
 
+      // Get user role from user_roles table
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', authData.user.id)
+        .single();
+
       const user: User = {
-        id: profile.id,
+        id: profile.user_id,
         email: profile.email,
         first_name: profile.first_name,
         last_name: profile.last_name,
         phone: profile.phone,
-        role: (profile.role || 'customer') as 'customer' | 'admin' | 'florist',
+        role: (roleData?.role || 'customer') as 'customer' | 'admin' | 'florist',
         is_active: profile.is_active,
         email_verified: profile.email_verified,
         created_at: profile.created_at,
@@ -237,7 +262,7 @@ class AuthService {
       const { data: updatedProfile, error } = await supabase
         .from('user_profiles')
         .update(data)
-        .eq('id', currentUser.id)
+        .eq('user_id', currentUser.id)
         .select()
         .single();
 
@@ -245,8 +270,10 @@ class AuthService {
 
       const updatedUser: User = {
         ...currentUser,
-        ...updatedProfile,
-        role: (updatedProfile.role || currentUser.role) as 'customer' | 'admin' | 'florist'
+        first_name: updatedProfile.first_name,
+        last_name: updatedProfile.last_name,
+        phone: updatedProfile.phone,
+        avatar_url: updatedProfile.avatar_url
       };
 
       this.setUserData(updatedUser);
