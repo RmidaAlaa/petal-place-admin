@@ -23,6 +23,11 @@ class ApiService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
+    // Don't attempt API calls if backend URL is not properly configured (production)
+    if (this.baseURL.includes('localhost') && typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+      throw new Error('Backend API not available in production');
+    }
+
     const url = `${this.baseURL}${endpoint}`;
     
     const config: RequestInit = {
@@ -44,7 +49,10 @@ class ApiService {
 
       return await response.json();
     } catch (error) {
-      console.error('API request failed:', error);
+      // Silently fail in production if backend not available - use Supabase instead
+      if (error instanceof Error && error.message === 'Backend API not available in production') {
+        throw error;
+      }
       throw error;
     }
   }

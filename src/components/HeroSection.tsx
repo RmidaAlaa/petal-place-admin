@@ -25,20 +25,23 @@ const HeroSection = () => {
   return (
     <section className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
       <AnimatedBackground />
-      {/* Background Image with Overlay */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat z-0"
-        style={{ backgroundImage: `url(${heroImage})` }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-transparent" />
-      </div>
+      {/* Background Image with Overlay - Optimized for LCP */}
+      <img 
+        src={heroImage}
+        alt="Beautiful fresh flowers and bouquets from Roses Garden"
+        className="absolute inset-0 w-full h-full object-cover object-center z-0"
+        fetchPriority="high"
+        loading="eager"
+        decoding="async"
+      />
+      <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-transparent z-[1]" />
 
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl animate-fade-in">
           <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
             <span className="block text-primary gradient-text">Roses Garden</span>
-            Fresh Flowers & Gifts
+            <span className="block">Fresh Flowers & Gifts</span>
           </h1>
           
           <p className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed">

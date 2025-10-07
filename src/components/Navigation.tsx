@@ -39,8 +39,11 @@ const Navigation = () => {
             <Link to="/" className="flex items-center space-x-2 sm:space-x-3">
               <img 
                 src={logoImage} 
-                alt="Roses Garden" 
+                alt="Roses Garden - Premium flowers and gifts"
                 className="h-8 w-8 sm:h-10 sm:w-10 object-cover rounded-full" 
+                loading="lazy"
+                width="40"
+                height="40"
               />
               <div className="flex flex-col">
                 <span className="text-base sm:text-lg font-bold text-foreground">Roses Garden</span>
@@ -122,12 +125,12 @@ const Navigation = () => {
             {/* Language Selector - Hidden on mobile */}
             <div className="hidden sm:block">
               <Select value={language} onValueChange={setLanguage}>
-                <SelectTrigger className="w-12 sm:w-16 h-8 border-none">
-                  <Globe className="h-4 w-4" />
+                <SelectTrigger className="w-12 sm:w-16 h-10 border-none" aria-label="Select language">
+                  <Globe className="h-4 w-4" aria-hidden="true" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">EN</SelectItem>
-                  <SelectItem value="ar">AR</SelectItem>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="ar">العربية</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -135,23 +138,29 @@ const Navigation = () => {
             {/* Currency Selector - Hidden on mobile */}
             <div className="hidden sm:block">
               <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger className="w-16 sm:w-20 h-8 border-none">
-                  <Coins className="h-4 w-4" />
+                <SelectTrigger className="w-16 sm:w-20 h-10 border-none" aria-label="Select currency">
+                  <Coins className="h-4 w-4" aria-hidden="true" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="USD">USD</SelectItem>
-                  <SelectItem value="SAR">SAR</SelectItem>
+                  <SelectItem value="USD">USD $</SelectItem>
+                  <SelectItem value="SAR">SAR ﷼</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <CartSidebar>
-              <Button variant="ghost" size="icon" className="relative">
-                <ShoppingBag className="h-5 w-5" />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="relative h-10 w-10 min-h-[40px] min-w-[40px]"
+                aria-label={`Shopping cart with ${state.itemCount} items`}
+              >
+                <ShoppingBag className="h-5 w-5" aria-hidden="true" />
                 {state.itemCount > 0 && (
                   <Badge 
                     variant="secondary" 
-                    className="absolute -top-1 sm:-top-2 -right-1 sm:-right-2 h-4 sm:h-5 w-4 sm:w-5 rounded-full p-0 flex items-center justify-center text-[10px] sm:text-xs bg-primary text-primary-foreground"
+                    className="absolute -top-1 sm:-top-2 -right-1 sm:-right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-primary text-primary-foreground"
+                    aria-label={`${state.itemCount} items in cart`}
                   >
                     {state.itemCount}
                   </Badge>
@@ -164,10 +173,11 @@ const Navigation = () => {
                 <DropdownMenuTrigger asChild>
                   <Button 
                     variant="outline" 
-                    className="border-border text-foreground h-9 px-2 sm:px-4"
+                    className="border-border text-foreground h-10 px-2 sm:px-4 min-h-[40px]"
                     size="sm"
+                    aria-label={`User menu for ${authState.user?.first_name}`}
                   >
-                    <User className="h-4 w-4 sm:mr-2" />
+                    <User className="h-4 w-4 sm:mr-2" aria-hidden="true" />
                     <span className="hidden sm:inline">{authState.user?.first_name}</span>
                   </Button>
                 </DropdownMenuTrigger>
@@ -221,10 +231,11 @@ const Navigation = () => {
             ) : (
               <Button 
                 variant="outline" 
-                className="border-border text-foreground"
+                className="border-border text-foreground h-10 min-h-[40px]"
                 onClick={() => setShowAuthModal(true)}
+                aria-label="Sign in to your account"
               >
-                <User className="h-4 w-4 mr-2" />
+                <User className="h-4 w-4 mr-2" aria-hidden="true" />
                 {t('nav.signIn')}
               </Button>
             )}
