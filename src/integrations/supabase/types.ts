@@ -529,6 +529,21 @@ export type Database = {
         }
         Returns: boolean
       }
+      validate_coupon_code: {
+        Args: { coupon_code: string }
+        Returns: {
+          code: string
+          expires_at: string
+          id: string
+          is_active: boolean
+          maximum_discount: number
+          minimum_amount: number
+          type: string
+          usage_limit: number
+          used_count: number
+          value: number
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "florist" | "customer"

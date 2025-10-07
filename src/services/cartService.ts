@@ -255,19 +255,43 @@ class CartService {
     }
   }
 
-  // Apply coupon (placeholder - will need coupons migration)
-  async applyCoupon(code: string, userId?: string): Promise<any> {
+  // Apply coupon using secure validation
+  async applyCoupon(code: string, userId?: string): Promise<Coupon> {
     try {
-      // This would need a coupons table in the database
-      // For now, return a mock response
+      if (!code?.trim()) {
+        throw new Error('Please enter a coupon code');
+      }
+
+      // Call the secure validation function via RPC
+      const { data, error } = await supabase
+        .rpc('validate_coupon_code', { coupon_code: code.trim().toUpperCase() });
+
+      if (error) {
+        console.error('Error validating coupon:', error);
+        throw new Error('Failed to validate coupon');
+      }
+
+      if (!data || data.length === 0) {
+        throw new Error('Invalid or expired coupon code');
+      }
+
+      const coupon = data[0];
+      
+      // Return the validated coupon
       return {
-        id: 'mock',
-        code,
-        type: 'percentage',
-        value: 10,
-        is_active: true
+        id: coupon.id,
+        code: coupon.code,
+        type: coupon.type as 'percentage' | 'fixed',
+        value: coupon.value,
+        minimum_amount: coupon.minimum_amount,
+        maximum_discount: coupon.maximum_discount,
+        usage_limit: coupon.usage_limit,
+        used_count: coupon.used_count,
+        expires_at: coupon.expires_at,
+        is_active: coupon.is_active,
+        created_at: new Date().toISOString(),
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error applying coupon:', error);
       throw error;
     }
