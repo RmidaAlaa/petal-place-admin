@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { supabase } from '@/integrations/supabase/client';
 
 interface DeliveryAddress {
   id?: string;
@@ -185,22 +186,76 @@ const CheckoutPage: React.FC = () => {
       return;
     }
 
+    if (!deliveryAddress.address_line_1 || !deliveryAddress.city || !deliveryAddress.postal_code) {
+      toast.error('Please complete the delivery address');
+      return;
+    }
+
     setIsProcessing(true);
     
     try {
-      // Simulate order processing
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Get current session for auth
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Please log in to place an order');
+        navigate('/login?redirect=/checkout');
+        return;
+      }
+
+      // Calculate totals
+      const subtotal = cartState.items.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
+      const selectedSlot = timeSlots.find(s => s.id === selectedTimeSlot);
+      const shippingAmount = (selectedSlot?.price || 0) + (subtotal > 100 ? 0 : 10);
+      const taxAmount = subtotal * 0.1;
+      const totalAmount = subtotal + shippingAmount + taxAmount;
+
+      // Prepare order items
+      const orderItems = cartState.items.map(item => ({
+        product_id: item.product_id,
+        quantity: item.quantity,
+        unit_price: item.price || 0,
+        product_name: item.name,
+        custom_bouquet_data: item.custom_bouquet_data,
+      }));
+
+      // Call edge function to process order
+      const { data, error } = await supabase.functions.invoke('process-order', {
+        body: {
+          items: orderItems,
+          delivery_address: deliveryAddress,
+          billing_address: useSameAddress ? deliveryAddress : billingAddress,
+          delivery_date: deliveryDate,
+          delivery_time_slot: selectedTimeSlot,
+          gift_message: giftMessage,
+          special_instructions: specialInstructions,
+          subtotal,
+          tax_amount: taxAmount,
+          shipping_amount: shippingAmount,
+          discount_amount: 0,
+          total_amount: totalAmount,
+          payment_method: 'card',
+          customer_email: customerInfo.email,
+          customer_name: `${customerInfo.first_name} ${customerInfo.last_name}`,
+        },
+      });
+
+      if (error) {
+        console.error('Order processing error:', error);
+        throw new Error(error.message || 'Failed to process order');
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      // Refresh cart to show empty state
+      await refreshCart();
       
-      // In a real app, you would:
-      // 1. Create order in database
-      // 2. Process payment
-      // 3. Send confirmation email
-      // 4. Clear cart
-      
-      toast.success('Order placed successfully!');
-      navigate('/success');
+      toast.success('Order placed successfully! Check your email for confirmation.');
+      navigate(`/success?order=${data.order_number}`);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to place order');
+      console.error('Order error:', error);
+      toast.error(error.message || 'Failed to place order. Please try again.');
     } finally {
       setIsProcessing(false);
     }

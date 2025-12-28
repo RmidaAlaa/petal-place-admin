@@ -1,1 +1,7 @@
 project_id = "apbfdrwneoohudetgcve"
+
+[functions.process-order]
+verify_jwt = false
+
+[functions.update-order-status]
+verify_jwt = false
