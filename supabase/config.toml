@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.update-order-status]
 verify_jwt = false
+
+[functions.manage-products]
+verify_jwt = false
+
+[functions.admin-analytics]
+verify_jwt = false

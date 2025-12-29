@@ -1,5 +1,5 @@
-// Review Service for Roses Garden
-// Handles all review and rating operations
+// Review Service for Roses Garden - Connected to Supabase
+import { supabase } from '@/integrations/supabase/client';
 
 export interface Review {
   id: string;
@@ -7,7 +7,7 @@ export interface Review {
   userId: string;
   userName: string;
   userEmail: string;
-  rating: number; // 1-5 stars
+  rating: number;
   title: string;
   comment: string;
   images?: string[];
@@ -62,13 +62,7 @@ export interface UpdateReviewData {
 }
 
 class ReviewService {
-  private baseUrl: string;
-
-  constructor() {
-    this.baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-  }
-
-  // Get reviews for a product
+  // Get reviews for a product from Supabase
   async getProductReviews(
     productId: string, 
     filters: ReviewFilters = {},
@@ -76,69 +70,186 @@ class ReviewService {
     limit: number = 10
   ): Promise<{ reviews: Review[]; total: number; stats: ReviewStats }> {
     try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        ...Object.fromEntries(
-          Object.entries(filters).filter(([_, value]) => value !== undefined)
-        ),
-      });
+      let query = supabase
+        .from('reviews')
+        .select('*, user_profiles!reviews_user_id_fkey(first_name, last_name, email)', { count: 'exact' })
+        .eq('product_id', productId);
 
-      const response = await fetch(`${this.baseUrl}/reviews/product/${productId}?${params}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch reviews');
+      // Apply rating filter
+      if (filters.rating) {
+        query = query.eq('rating', filters.rating);
       }
 
-      return await response.json();
+      // Apply verified filter
+      if (filters.verified !== undefined) {
+        query = query.eq('verified_purchase', filters.verified);
+      }
+
+      // Apply sorting
+      switch (filters.sortBy) {
+        case 'oldest':
+          query = query.order('created_at', { ascending: true });
+          break;
+        case 'highest':
+          query = query.order('rating', { ascending: false });
+          break;
+        case 'lowest':
+          query = query.order('rating', { ascending: true });
+          break;
+        case 'most_helpful':
+          query = query.order('helpful_count', { ascending: false });
+          break;
+        default: // newest
+          query = query.order('created_at', { ascending: false });
+      }
+
+      // Apply pagination
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+      query = query.range(from, to);
+
+      const { data: reviews, error, count } = await query;
+
+      if (error) {
+        console.error('Error fetching reviews:', error);
+        throw error;
+      }
+
+      // Get all reviews for stats calculation
+      const { data: allReviews } = await supabase
+        .from('reviews')
+        .select('rating, verified_purchase, created_at')
+        .eq('product_id', productId);
+
+      // Calculate stats
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+
+      const stats: ReviewStats = {
+        averageRating: allReviews?.length 
+          ? allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length 
+          : 0,
+        totalReviews: allReviews?.length || 0,
+        ratingDistribution: {
+          5: allReviews?.filter(r => r.rating === 5).length || 0,
+          4: allReviews?.filter(r => r.rating === 4).length || 0,
+          3: allReviews?.filter(r => r.rating === 3).length || 0,
+          2: allReviews?.filter(r => r.rating === 2).length || 0,
+          1: allReviews?.filter(r => r.rating === 1).length || 0,
+        },
+        verifiedReviews: allReviews?.filter(r => r.verified_purchase).length || 0,
+        recentReviews: allReviews?.filter(r => new Date(r.created_at) > weekAgo).length || 0,
+      };
+
+      // Transform reviews to expected format
+      const transformedReviews: Review[] = (reviews || []).map((r: any) => ({
+        id: r.id,
+        productId: r.product_id,
+        userId: r.user_id,
+        userName: r.user_profiles 
+          ? `${r.user_profiles.first_name || ''} ${r.user_profiles.last_name || ''}`.trim() || 'Anonymous'
+          : 'Anonymous',
+        userEmail: r.user_profiles?.email || '',
+        rating: r.rating,
+        title: '', // Not in current schema
+        comment: r.comment || '',
+        verified: r.verified_purchase || false,
+        helpful: r.helpful_count || 0,
+        notHelpful: 0,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+      }));
+
+      return {
+        reviews: transformedReviews,
+        total: count || 0,
+        stats,
+      };
     } catch (error) {
-      console.error('Error fetching product reviews:', error);
-      // Return mock data for development
-      return this.getMockProductReviews(productId, filters, page, limit);
+      console.error('Error in getProductReviews:', error);
+      throw error;
     }
   }
 
   // Get user's reviews
   async getUserReviews(userId: string, page: number = 1, limit: number = 10): Promise<{ reviews: Review[]; total: number }> {
     try {
-      const response = await fetch(`${this.baseUrl}/reviews/user/${userId}?page=${page}&limit=${limit}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch user reviews');
-      }
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
 
-      return await response.json();
+      const { data: reviews, error, count } = await supabase
+        .from('reviews')
+        .select('*, products(name)', { count: 'exact' })
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      if (error) throw error;
+
+      const transformedReviews: Review[] = (reviews || []).map((r: any) => ({
+        id: r.id,
+        productId: r.product_id,
+        userId: r.user_id,
+        userName: 'You',
+        userEmail: '',
+        rating: r.rating,
+        title: '',
+        comment: r.comment || '',
+        verified: r.verified_purchase || false,
+        helpful: r.helpful_count || 0,
+        notHelpful: 0,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+      }));
+
+      return {
+        reviews: transformedReviews,
+        total: count || 0,
+      };
     } catch (error) {
       console.error('Error fetching user reviews:', error);
-      return this.getMockUserReviews(userId, page, limit);
+      throw error;
     }
   }
 
   // Create a new review
   async createReview(data: CreateReviewData): Promise<Review> {
     try {
-      const formData = new FormData();
-      formData.append('productId', data.productId);
-      formData.append('rating', data.rating.toString());
-      formData.append('title', data.title);
-      formData.append('comment', data.comment);
-      
-      if (data.images) {
-        data.images.forEach((image, index) => {
-          formData.append(`images`, image);
-        });
-      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Must be logged in to create a review');
 
-      const response = await fetch(`${this.baseUrl}/reviews`, {
-        method: 'POST',
-        body: formData,
-      });
+      const { data: review, error } = await supabase
+        .from('reviews')
+        .insert({
+          product_id: data.productId,
+          user_id: user.id,
+          rating: data.rating,
+          comment: data.comment,
+          verified_purchase: false, // Will be set by trigger based on order history
+        })
+        .select()
+        .single();
 
-      if (!response.ok) {
-        throw new Error('Failed to create review');
-      }
+      if (error) throw error;
 
-      return await response.json();
+      // Update product rating
+      await this.updateProductRating(data.productId);
+
+      return {
+        id: review.id,
+        productId: review.product_id,
+        userId: review.user_id,
+        userName: 'You',
+        userEmail: user.email || '',
+        rating: review.rating,
+        title: '',
+        comment: review.comment || '',
+        verified: review.verified_purchase || false,
+        helpful: 0,
+        notHelpful: 0,
+        createdAt: review.created_at,
+        updatedAt: review.updated_at,
+      };
     } catch (error) {
       console.error('Error creating review:', error);
       throw error;
@@ -148,28 +259,41 @@ class ReviewService {
   // Update a review
   async updateReview(reviewId: string, data: UpdateReviewData): Promise<Review> {
     try {
-      const formData = new FormData();
-      
-      if (data.rating !== undefined) formData.append('rating', data.rating.toString());
-      if (data.title) formData.append('title', data.title);
-      if (data.comment) formData.append('comment', data.comment);
-      
-      if (data.images) {
-        data.images.forEach((image) => {
-          formData.append('images', image);
-        });
-      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Must be logged in to update a review');
 
-      const response = await fetch(`${this.baseUrl}/reviews/${reviewId}`, {
-        method: 'PUT',
-        body: formData,
-      });
+      const updateData: any = {};
+      if (data.rating !== undefined) updateData.rating = data.rating;
+      if (data.comment !== undefined) updateData.comment = data.comment;
 
-      if (!response.ok) {
-        throw new Error('Failed to update review');
-      }
+      const { data: review, error } = await supabase
+        .from('reviews')
+        .update(updateData)
+        .eq('id', reviewId)
+        .eq('user_id', user.id)
+        .select()
+        .single();
 
-      return await response.json();
+      if (error) throw error;
+
+      // Update product rating
+      await this.updateProductRating(review.product_id);
+
+      return {
+        id: review.id,
+        productId: review.product_id,
+        userId: review.user_id,
+        userName: 'You',
+        userEmail: user.email || '',
+        rating: review.rating,
+        title: '',
+        comment: review.comment || '',
+        verified: review.verified_purchase || false,
+        helpful: review.helpful_count || 0,
+        notHelpful: 0,
+        createdAt: review.created_at,
+        updatedAt: review.updated_at,
+      };
     } catch (error) {
       console.error('Error updating review:', error);
       throw error;
@@ -179,12 +303,27 @@ class ReviewService {
   // Delete a review
   async deleteReview(reviewId: string): Promise<void> {
     try {
-      const response = await fetch(`${this.baseUrl}/reviews/${reviewId}`, {
-        method: 'DELETE',
-      });
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Must be logged in to delete a review');
 
-      if (!response.ok) {
-        throw new Error('Failed to delete review');
+      // Get product_id before deletion
+      const { data: review } = await supabase
+        .from('reviews')
+        .select('product_id')
+        .eq('id', reviewId)
+        .single();
+
+      const { error } = await supabase
+        .from('reviews')
+        .delete()
+        .eq('id', reviewId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Update product rating
+      if (review) {
+        await this.updateProductRating(review.product_id);
       }
     } catch (error) {
       console.error('Error deleting review:', error);
@@ -195,16 +334,21 @@ class ReviewService {
   // Mark review as helpful
   async markHelpful(reviewId: string, helpful: boolean): Promise<void> {
     try {
-      const response = await fetch(`${this.baseUrl}/reviews/${reviewId}/helpful`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ helpful }),
-      });
+      const { data: review } = await supabase
+        .from('reviews')
+        .select('helpful_count')
+        .eq('id', reviewId)
+        .single();
 
-      if (!response.ok) {
-        throw new Error('Failed to mark review as helpful');
+      if (review) {
+        const newCount = helpful 
+          ? (review.helpful_count || 0) + 1 
+          : Math.max(0, (review.helpful_count || 0) - 1);
+
+        await supabase
+          .from('reviews')
+          .update({ helpful_count: newCount })
+          .eq('id', reviewId);
       }
     } catch (error) {
       console.error('Error marking review as helpful:', error);
@@ -212,298 +356,36 @@ class ReviewService {
     }
   }
 
-  // Report a review
+  // Report a review (placeholder - would need a reports table)
   async reportReview(reviewId: string, reason: string, description?: string): Promise<void> {
-    try {
-      const response = await fetch(`${this.baseUrl}/reviews/${reviewId}/report`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ reason, description }),
-      });
+    console.log('Review reported:', { reviewId, reason, description });
+    // In a full implementation, this would insert into a review_reports table
+  }
 
-      if (!response.ok) {
-        throw new Error('Failed to report review');
+  // Update product rating based on reviews
+  private async updateProductRating(productId: string): Promise<void> {
+    try {
+      const { data: reviews } = await supabase
+        .from('reviews')
+        .select('rating')
+        .eq('product_id', productId);
+
+      if (reviews && reviews.length > 0) {
+        const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+        
+        await supabase
+          .from('products')
+          .update({ 
+            rating: Math.round(avgRating * 10) / 10,
+            review_count: reviews.length 
+          })
+          .eq('id', productId);
       }
     } catch (error) {
-      console.error('Error reporting review:', error);
-      throw error;
+      console.error('Error updating product rating:', error);
     }
-  }
-
-  // Get review statistics for admin
-  async getReviewStats(): Promise<{
-    totalReviews: number;
-    averageRating: number;
-    pendingModeration: number;
-    reportedReviews: number;
-    recentReviews: Review[];
-  }> {
-    try {
-      const response = await fetch(`${this.baseUrl}/reviews/stats`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch review stats');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching review stats:', error);
-      return this.getMockReviewStats();
-    }
-  }
-
-  // Moderate review (admin only)
-  async moderateReview(reviewId: string, action: 'approve' | 'reject' | 'hide', reason?: string): Promise<void> {
-    try {
-      const response = await fetch(`${this.baseUrl}/reviews/${reviewId}/moderate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ action, reason }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to moderate review');
-      }
-    } catch (error) {
-      console.error('Error moderating review:', error);
-      throw error;
-    }
-  }
-
-  // Add admin response to review
-  async addResponse(reviewId: string, comment: string): Promise<void> {
-    try {
-      const response = await fetch(`${this.baseUrl}/reviews/${reviewId}/response`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ comment }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to add response');
-      }
-    } catch (error) {
-      console.error('Error adding response:', error);
-      throw error;
-    }
-  }
-
-  // Mock data for development
-  private getMockProductReviews(
-    productId: string, 
-    filters: ReviewFilters, 
-    page: number, 
-    limit: number
-  ): { reviews: Review[]; total: number; stats: ReviewStats } {
-    const mockReviews: Review[] = [
-      {
-        id: '1',
-        productId,
-        userId: 'user1',
-        userName: 'Sarah Johnson',
-        userEmail: 'sarah@example.com',
-        rating: 5,
-        title: 'Absolutely beautiful!',
-        comment: 'These roses were absolutely stunning! The quality was exceptional and they lasted much longer than expected. Perfect for my anniversary dinner.',
-        images: ['https://via.placeholder.com/300x200/FFC0CB/FFFFFF?text=Rose+Photo+1'],
-        verified: true,
-        helpful: 12,
-        notHelpful: 1,
-        createdAt: '2024-01-15T10:30:00Z',
-        updatedAt: '2024-01-15T10:30:00Z',
-      },
-      {
-        id: '2',
-        productId,
-        userId: 'user2',
-        userName: 'Michael Chen',
-        userEmail: 'michael@example.com',
-        rating: 4,
-        title: 'Great quality, fast delivery',
-        comment: 'The roses arrived fresh and beautiful. Delivery was quick and the packaging was excellent. Would definitely order again.',
-        verified: true,
-        helpful: 8,
-        notHelpful: 0,
-        createdAt: '2024-01-12T14:20:00Z',
-        updatedAt: '2024-01-12T14:20:00Z',
-      },
-      {
-        id: '3',
-        productId,
-        userId: 'user3',
-        userName: 'Emily Davis',
-        userEmail: 'emily@example.com',
-        rating: 5,
-        title: 'Perfect for special occasions',
-        comment: 'I ordered these for my mother\'s birthday and she was thrilled! The arrangement was exactly as pictured and the flowers were fresh.',
-        images: ['https://via.placeholder.com/300x200/FFB6C1/FFFFFF?text=Rose+Photo+2'],
-        verified: true,
-        helpful: 15,
-        notHelpful: 0,
-        createdAt: '2024-01-10T09:15:00Z',
-        updatedAt: '2024-01-10T09:15:00Z',
-      },
-      {
-        id: '4',
-        productId,
-        userId: 'user4',
-        userName: 'David Wilson',
-        userEmail: 'david@example.com',
-        rating: 3,
-        title: 'Good but could be better',
-        comment: 'The roses were nice but some were slightly wilted upon arrival. Customer service was helpful and offered a partial refund.',
-        verified: true,
-        helpful: 3,
-        notHelpful: 2,
-        createdAt: '2024-01-08T16:45:00Z',
-        updatedAt: '2024-01-08T16:45:00Z',
-        response: {
-          id: 'resp1',
-          adminName: 'Roses Garden Support',
-          comment: 'Thank you for your feedback. We apologize for the issue and have improved our quality control process.',
-          createdAt: '2024-01-09T10:00:00Z',
-        },
-      },
-      {
-        id: '5',
-        productId,
-        userId: 'user5',
-        userName: 'Lisa Anderson',
-        userEmail: 'lisa@example.com',
-        rating: 5,
-        title: 'Exceeded expectations!',
-        comment: 'I was skeptical about ordering flowers online, but these exceeded all my expectations. The quality and freshness were outstanding.',
-        verified: true,
-        helpful: 20,
-        notHelpful: 0,
-        createdAt: '2024-01-05T11:30:00Z',
-        updatedAt: '2024-01-05T11:30:00Z',
-      },
-    ];
-
-    // Apply filters
-    let filteredReviews = mockReviews;
-
-    if (filters.rating) {
-      filteredReviews = filteredReviews.filter(review => review.rating === filters.rating);
-    }
-
-    if (filters.verified !== undefined) {
-      filteredReviews = filteredReviews.filter(review => review.verified === filters.verified);
-    }
-
-    if (filters.hasImages) {
-      filteredReviews = filteredReviews.filter(review => review.images && review.images.length > 0);
-    }
-
-    if (filters.search) {
-      const searchTerm = filters.search.toLowerCase();
-      filteredReviews = filteredReviews.filter(review => 
-        review.title.toLowerCase().includes(searchTerm) ||
-        review.comment.toLowerCase().includes(searchTerm) ||
-        review.userName.toLowerCase().includes(searchTerm)
-      );
-    }
-
-    // Apply sorting
-    if (filters.sortBy) {
-      switch (filters.sortBy) {
-        case 'newest':
-          filteredReviews.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-          break;
-        case 'oldest':
-          filteredReviews.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-          break;
-        case 'highest':
-          filteredReviews.sort((a, b) => b.rating - a.rating);
-          break;
-        case 'lowest':
-          filteredReviews.sort((a, b) => a.rating - b.rating);
-          break;
-        case 'most_helpful':
-          filteredReviews.sort((a, b) => (b.helpful - b.notHelpful) - (a.helpful - a.notHelpful));
-          break;
-      }
-    }
-
-    // Apply pagination
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedReviews = filteredReviews.slice(startIndex, endIndex);
-
-    // Calculate stats
-    const stats: ReviewStats = {
-      averageRating: mockReviews.reduce((sum, review) => sum + review.rating, 0) / mockReviews.length,
-      totalReviews: mockReviews.length,
-      ratingDistribution: {
-        5: mockReviews.filter(r => r.rating === 5).length,
-        4: mockReviews.filter(r => r.rating === 4).length,
-        3: mockReviews.filter(r => r.rating === 3).length,
-        2: mockReviews.filter(r => r.rating === 2).length,
-        1: mockReviews.filter(r => r.rating === 1).length,
-      },
-      verifiedReviews: mockReviews.filter(r => r.verified).length,
-      recentReviews: mockReviews.filter(r => {
-        const reviewDate = new Date(r.createdAt);
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        return reviewDate > weekAgo;
-      }).length,
-    };
-
-    return {
-      reviews: paginatedReviews,
-      total: filteredReviews.length,
-      stats,
-    };
-  }
-
-  private getMockUserReviews(userId: string, page: number, limit: number): { reviews: Review[]; total: number } {
-    const mockReviews: Review[] = [
-      {
-        id: '1',
-        productId: 'prod1',
-        userId,
-        userName: 'Current User',
-        userEmail: 'user@example.com',
-        rating: 5,
-        title: 'Amazing roses!',
-        comment: 'These were perfect for my anniversary.',
-        verified: true,
-        helpful: 5,
-        notHelpful: 0,
-        createdAt: '2024-01-15T10:30:00Z',
-        updatedAt: '2024-01-15T10:30:00Z',
-      },
-    ];
-
-    return {
-      reviews: mockReviews,
-      total: mockReviews.length,
-    };
-  }
-
-  private getMockReviewStats(): {
-    totalReviews: number;
-    averageRating: number;
-    pendingModeration: number;
-    reportedReviews: number;
-    recentReviews: Review[];
-  } {
-    return {
-      totalReviews: 1250,
-      averageRating: 4.3,
-      pendingModeration: 12,
-      reportedReviews: 3,
-      recentReviews: [],
-    };
   }
 }
 
-export default new ReviewService();
+const reviewService = new ReviewService();
+export default reviewService;
