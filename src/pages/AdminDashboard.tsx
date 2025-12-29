@@ -13,6 +13,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import EmailManager from '@/components/EmailManager';
 import DiscountsManager from '@/pages/DiscountsManager';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import {
   DollarSign,
   ShoppingCart,
@@ -342,107 +344,97 @@ const AdminDashboard: React.FC = () => {
         setIsLoading(true);
       }
 
-      // Simulate API calls - in a real app, these would be actual API calls
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Generate mock data based on selected period
-      const periodMultiplier = selectedPeriod === '24h' ? 0.1 :
-                              selectedPeriod === '7d' ? 1 :
-                              selectedPeriod === '30d' ? 4.3 :
-                              selectedPeriod === '90d' ? 13 : 1;
-
-      setStats({
-        totalRevenue: Math.round(125430.50 * periodMultiplier),
-        totalOrders: Math.round(1247 * periodMultiplier),
-        totalCustomers: Math.round(892 * periodMultiplier),
-        totalProducts: 156, // Products don't change with time period
-        revenueGrowth: selectedPeriod === '24h' ? 2.1 :
-                      selectedPeriod === '7d' ? 12.5 :
-                      selectedPeriod === '30d' ? 8.7 :
-                      selectedPeriod === '90d' ? 15.3 : 12.5,
-        ordersGrowth: selectedPeriod === '24h' ? 1.8 :
-                     selectedPeriod === '7d' ? 8.3 :
-                     selectedPeriod === '30d' ? 6.2 :
-                     selectedPeriod === '90d' ? 12.1 : 8.3,
-        customersGrowth: selectedPeriod === '24h' ? 0.5 :
-                        selectedPeriod === '7d' ? 15.2 :
-                        selectedPeriod === '30d' ? 11.8 :
-                        selectedPeriod === '90d' ? 18.5 : 15.2,
-        productsGrowth: -2.1 // Products growth stays the same
+      // Fetch real data from admin-analytics edge function
+      const { data, error } = await supabase.functions.invoke('admin-analytics', {
+        body: {},
+        headers: {},
       });
 
-      setRecentOrders([
-        {
-          id: 'ORD-001',
-          customer: 'John Doe',
-          total: 89.99,
-          status: 'delivered',
-          date: '2024-01-15',
-          items: 3
-        },
-        {
-          id: 'ORD-002',
-          customer: 'Jane Smith',
-          total: 156.50,
-          status: 'shipped',
-          date: '2024-01-14',
-          items: 5
-        },
-        {
-          id: 'ORD-003',
-          customer: 'Mike Johnson',
-          total: 45.00,
-          status: 'processing',
-          date: '2024-01-14',
-          items: 2
-        },
-        {
-          id: 'ORD-004',
-          customer: 'Sarah Wilson',
-          total: 234.75,
-          status: 'pending',
-          date: '2024-01-13',
-          items: 7
-        },
-        {
-          id: 'ORD-005',
-          customer: 'David Brown',
-          total: 78.25,
-          status: 'cancelled',
-          date: '2024-01-12',
-          items: 1
-        }
-      ]);
+      // If edge function fails, use the URL params approach
+      if (error || !data?.success) {
+        console.log('Falling back to direct query for analytics');
+        // Fallback: fetch directly from Supabase
+        const periodMultiplier = selectedPeriod === '24h' ? 0.1 :
+                                selectedPeriod === '7d' ? 1 :
+                                selectedPeriod === '30d' ? 4.3 :
+                                selectedPeriod === '90d' ? 13 : 1;
 
-      setTopProducts([
-        {
-          id: '1',
-          name: 'Red Rose Bouquet',
-          sales: 145,
-          revenue: 7250.00,
-          rating: 4.8,
-          reviews: 89,
-          image: '/api/placeholder/60/60'
-        },
-        {
-          id: '2',
-          name: 'Mixed Flower Arrangement',
-          sales: 98,
-          revenue: 4900.00,
-          rating: 4.6,
-          reviews: 67,
-          image: '/api/placeholder/60/60'
-        },
-        {
-          id: '3',
-          name: 'White Lily Bouquet',
-          sales: 76,
-          revenue: 3800.00,
-          rating: 4.9,
-          reviews: 45,
-          image: '/api/placeholder/60/60'
+        // Fetch orders
+        const { data: ordersData, count: ordersCount } = await supabase
+          .from('orders')
+          .select('id, total_amount, status, created_at, order_number', { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        // Fetch products count
+        const { count: productsCount } = await supabase
+          .from('products')
+          .select('id', { count: 'exact' })
+          .eq('is_active', true);
+
+        // Fetch customers count
+        const { count: customersCount } = await supabase
+          .from('user_profiles')
+          .select('id', { count: 'exact' });
+
+        const totalRevenue = (ordersData || []).reduce((sum, o) => sum + (o.total_amount || 0), 0);
+
+        setStats({
+          totalRevenue: Math.round(totalRevenue * 100) / 100,
+          totalOrders: ordersCount || 0,
+          totalCustomers: customersCount || 0,
+          totalProducts: productsCount || 0,
+          revenueGrowth: 0,
+          ordersGrowth: 0,
+          customersGrowth: 0,
+          productsGrowth: 0
+        });
+
+        setRecentOrders((ordersData || []).map(o => ({
+          id: o.order_number || o.id,
+          customer: 'Customer',
+          total: o.total_amount || 0,
+          status: o.status as any,
+          date: o.created_at,
+          items: 1
+        })));
+
+        // Fetch top products
+        const { data: topProductsData } = await supabase
+          .from('products')
+          .select('id, name, price, rating, review_count, images')
+          .eq('is_active', true)
+          .order('review_count', { ascending: false })
+          .limit(5);
+
+        setTopProducts((topProductsData || []).map(p => ({
+          id: p.id,
+          name: p.name,
+          sales: p.review_count || 0,
+          revenue: (p.price || 0) * (p.review_count || 1),
+          rating: p.rating || 0,
+          reviews: p.review_count || 0,
+          image: Array.isArray(p.images) && p.images.length > 0 ? String(p.images[0]) : ''
+        })));
+      } else {
+        // Use data from edge function
+        setStats(data.stats);
+        setRecentOrders(data.recentOrders.map((o: any) => ({
+          ...o,
+          items: 1
+        })));
+        setTopProducts(data.topProducts);
+        
+        if (data.analyticsData) {
+          setAnalyticsData({
+            revenue: data.analyticsData.revenue || [],
+            orders: [],
+            customers: [],
+            topProducts: data.topProducts.map((p: any) => ({ name: p.name, sales: p.sales })),
+            salesByCategory: data.analyticsData.salesByCategory || []
+          });
         }
-      ]);
+      }
 
       setCustomers([
         {
@@ -616,11 +608,11 @@ const AdminDashboard: React.FC = () => {
           count: Math.round(generateDataPoints(baseOrders * 0.3)[i])
         })),
         topProducts: [
-          { name: 'Red Rose Bouquet', sales: Math.round(145 * periodMultiplier) },
-          { name: 'Mixed Flower Arrangement', sales: Math.round(98 * periodMultiplier) },
-          { name: 'White Lily Bouquet', sales: Math.round(76 * periodMultiplier) },
-          { name: 'Tulip Collection', sales: Math.round(54 * periodMultiplier) },
-          { name: 'Orchid Special', sales: Math.round(43 * periodMultiplier) }
+          { name: 'Red Rose Bouquet', sales: 145 },
+          { name: 'Mixed Flower Arrangement', sales: 98 },
+          { name: 'White Lily Bouquet', sales: 76 },
+          { name: 'Tulip Collection', sales: 54 },
+          { name: 'Orchid Special', sales: 43 }
         ],
         salesByCategory: [
           { name: 'Roses', value: 35 },

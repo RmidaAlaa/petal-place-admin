@@ -474,8 +474,14 @@ export const BouquetBuilder: React.FC = () => {
       return;
     }
 
+    if (!authState.isAuthenticated) {
+      toast.error('Please log in to save your bouquet');
+      return;
+    }
+
     try {
-      // In a real app, this would save to the backend
+      const { supabase } = await import('@/integrations/supabase/client');
+      
       const bouquetData = {
         name: bouquetName,
         description: bouquetDescription,
@@ -487,23 +493,33 @@ export const BouquetBuilder: React.FC = () => {
         totalPrice: totalPrice
       };
 
-      // For now, save to localStorage
-      const savedBouquets = JSON.parse(localStorage.getItem('savedBouquets') || '[]');
-      savedBouquets.push({
-        id: Date.now().toString(),
-        ...bouquetData,
-        createdAt: new Date().toISOString()
-      });
-      localStorage.setItem('savedBouquets', JSON.stringify(savedBouquets));
+      const { data, error } = await supabase
+        .from('custom_bouquets')
+        .insert([{
+          user_id: authState.user?.id as string,
+          name: bouquetName,
+          description: bouquetDescription,
+          design_data: bouquetData as unknown as import('@/integrations/supabase/types').Json,
+          price: totalPrice,
+          is_public: false,
+        }])
+        .select()
+        .single();
 
-      toast.success('Bouquet saved successfully!');
+      if (error) {
+        console.error('Save bouquet error:', error);
+        throw error;
+      }
+
+      toast.success('Bouquet saved to your account!');
       setShowSaveDialog(false);
       setBouquetName('');
       setBouquetDescription('');
-    } catch (error) {
-      toast.error('Failed to save bouquet');
+    } catch (error: any) {
+      console.error('Failed to save bouquet:', error);
+      toast.error(error.message || 'Failed to save bouquet');
     }
-  }, [bouquetName, bouquetDescription, bouquetItems, selectedWrapping, selectedBase, selectedRibbon, selectedAccessories, totalPrice]);
+  }, [bouquetName, bouquetDescription, bouquetItems, selectedWrapping, selectedBase, selectedRibbon, selectedAccessories, totalPrice, authState]);
 
   const shareBouquet = useCallback(() => {
     if (bouquetItems.length === 0) {
