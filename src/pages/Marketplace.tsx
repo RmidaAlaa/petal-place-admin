@@ -181,10 +181,9 @@ const Marketplace = () => {
       product.price >= filters.priceRange[0] && product.price <= filters.priceRange[1]
     );
 
-    // Stock filter
+    // Stock filter - products with stock > 0
     if (filters.inStock) {
-      // Simulate stock check (in real app this would come from backend)
-      result = result.filter(() => Math.random() > 0.2);
+      result = result.filter(product => (product as any).stock_quantity > 0);
     }
 
     // New items filter
