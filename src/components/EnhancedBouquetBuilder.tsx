@@ -795,10 +795,39 @@ export const EnhancedBouquetBuilder: React.FC = () => {
               <Button variant="outline" onClick={() => setShowSaveDialog(false)}>
                 Cancel
               </Button>
-              <Button onClick={() => {
-                // TODO: Implement save functionality
-                toast.success('Bouquet saved successfully!');
-                setShowSaveDialog(false);
+              <Button onClick={async () => {
+                try {
+                  const { data: userData } = await (await import('@/integrations/supabase/client')).supabase.auth.getUser();
+                  if (!userData.user) {
+                    toast.error('Please log in to save your bouquet');
+                    return;
+                  }
+                  
+                  const { supabase } = await import('@/integrations/supabase/client');
+                  const designData = {
+                    bouquetItems: bouquetItems,
+                    wrapping: wrapping,
+                    base: base,
+                    ribbon: ribbon,
+                    accessories: selectedAccessories,
+                    card: card,
+                  };
+                  
+                  const { error } = await supabase.from('custom_bouquets').insert([{
+                    user_id: userData.user.id,
+                    name: bouquetName || 'My Bouquet',
+                    description: bouquetDescription || null,
+                    price: totalPrice,
+                    design_data: designData as unknown as import('@/integrations/supabase/types').Json,
+                  }]);
+                  
+                  if (error) throw error;
+                  toast.success('Bouquet saved successfully!');
+                  setShowSaveDialog(false);
+                } catch (err: any) {
+                  console.error('Error saving bouquet:', err);
+                  toast.error(err.message || 'Failed to save bouquet');
+                }
               }}>
                 Save Bouquet
               </Button>

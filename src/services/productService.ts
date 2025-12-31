@@ -308,62 +308,77 @@ class ProductService {
     }
   }
 
-  // Get product reviews
+  // Get product reviews from Supabase
   async getProductReviews(productId: string): Promise<{ reviews: Review[] }> {
     try {
-      // For now, return mock reviews since we don't have proper relations set up
-      const mockReviews: Review[] = [
-        {
-          id: '1',
-          user_id: 'user1',
-          user_name: 'Sarah Johnson',
-          product_id: productId,
-          rating: 5,
-          comment: 'Beautiful flowers! Exactly as pictured and arrived fresh.',
-          helpful_count: 12,
-          verified_purchase: true,
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: '2',
-          user_id: 'user2', 
-          user_name: 'Ahmed Al-Rashid',
-          product_id: productId,
-          rating: 4,
-          comment: 'Great quality, fast delivery. Will order again!',
-          helpful_count: 8,
-          verified_purchase: true,
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-        }
-      ];
+      const { data, error } = await supabase
+        .from('reviews')
+        .select(`
+          id,
+          user_id,
+          product_id,
+          rating,
+          comment,
+          helpful_count,
+          verified_purchase,
+          created_at
+        `)
+        .eq('product_id', productId)
+        .order('created_at', { ascending: false });
 
-      return { reviews: mockReviews };
+      if (error) throw error;
+
+      // Transform to include user_name (we'll use a placeholder since profiles aren't linked)
+      const reviews: Review[] = (data || []).map(review => ({
+        id: review.id,
+        user_id: review.user_id,
+        user_name: 'Customer', // Would need to join with user_profiles
+        product_id: review.product_id,
+        rating: review.rating,
+        comment: review.comment || '',
+        helpful_count: review.helpful_count || 0,
+        verified_purchase: review.verified_purchase || false,
+        created_at: review.created_at,
+      }));
+
+      return { reviews };
     } catch (error) {
       console.error('Error fetching reviews:', error);
       return { reviews: [] };
     }
   }
 
-  // Add product review
+  // Add product review to Supabase
   async addProductReview(productId: string, rating: number, comment?: string): Promise<Review> {
     try {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error('User not authenticated');
 
-      // For now, return mock review since we don't have proper relations
-      const mockReview: Review = {
-        id: `review_${Date.now()}`,
-        user_id: userData.user.id,
-        user_name: 'You',
-        product_id: productId,
-        rating,
-        comment: comment || '',
-        helpful_count: 0,
-        verified_purchase: false,
-        created_at: new Date().toISOString(),
-      };
+      const { data, error } = await supabase
+        .from('reviews')
+        .insert({
+          product_id: productId,
+          user_id: userData.user.id,
+          rating,
+          comment: comment || null,
+          verified_purchase: false,
+        })
+        .select()
+        .single();
 
-      return mockReview;
+      if (error) throw error;
+
+      return {
+        id: data.id,
+        user_id: data.user_id,
+        user_name: 'You',
+        product_id: data.product_id,
+        rating: data.rating,
+        comment: data.comment || '',
+        helpful_count: data.helpful_count || 0,
+        verified_purchase: data.verified_purchase || false,
+        created_at: data.created_at,
+      };
     } catch (error) {
       console.error('Error adding review:', error);
       throw error;

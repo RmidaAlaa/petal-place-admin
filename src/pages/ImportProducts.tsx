@@ -9,7 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { Upload, Download, FileText, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import apiService from '@/services/api';
+import { supabase } from '@/integrations/supabase/client';
 
 const ImportProducts = () => {
   const { state: authState } = useAuth();
@@ -52,6 +52,25 @@ const ImportProducts = () => {
     }
   };
 
+  const parseCSV = (text: string): Record<string, string>[] => {
+    const lines = text.trim().split('\n');
+    if (lines.length < 2) return [];
+    
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''));
+    const rows: Record<string, string>[] = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+      const row: Record<string, string> = {};
+      headers.forEach((header, index) => {
+        row[header] = values[index] || '';
+      });
+      rows.push(row);
+    }
+    
+    return rows;
+  };
+
   const handleUpload = async () => {
     if (!file) {
       toast({
@@ -64,28 +83,48 @@ const ImportProducts = () => {
 
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('csv', file);
+      const text = await file.text();
+      const rows = parseCSV(text);
+      
+      let imported = 0;
+      let errors = 0;
+      const errorDetails: string[] = [];
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/import/products`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: formData,
-      });
+      for (const row of rows) {
+        try {
+          if (!row.name || !row.price || !row.category) {
+            errorDetails.push(`Missing required fields for: ${row.name || 'unnamed product'}`);
+            errors++;
+            continue;
+          }
 
-      const result = await response.json();
+          const productData = {
+            name: row.name,
+            price: parseFloat(row.price),
+            category: row.category,
+            description: row.description || null,
+            original_price: row.original_price ? parseFloat(row.original_price) : null,
+            stock_quantity: row.stock_quantity ? parseInt(row.stock_quantity) : 10,
+            images: row.image_url ? [row.image_url] : [],
+            is_featured: row.is_featured === 'true',
+            is_new: row.is_new === 'true',
+            is_active: true,
+          };
 
-      if (response.ok) {
-        setImportResult(result);
-        toast({
-          title: 'Import Successful',
-          description: `Imported ${result.imported} products successfully.`,
-        });
-      } else {
-        throw new Error(result.error || 'Import failed');
+          const { error } = await supabase.from('products').insert(productData);
+          if (error) throw error;
+          imported++;
+        } catch (err: any) {
+          errorDetails.push(`Error importing ${row.name}: ${err.message}`);
+          errors++;
+        }
       }
+
+      setImportResult({ imported, errors, errorDetails });
+      toast({
+        title: 'Import Completed',
+        description: `Imported ${imported} products with ${errors} errors.`,
+      });
     } catch (error: any) {
       toast({
         title: 'Import Failed',
@@ -97,39 +136,25 @@ const ImportProducts = () => {
     }
   };
 
-  const downloadTemplate = async () => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/import/template`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+  const downloadTemplate = () => {
+    const template = `name,price,category,description,original_price,stock_quantity,image_url,is_featured,is_new
+"Red Rose Bouquet",45.00,"Natural Roses","Beautiful red roses arrangement",55.00,25,"https://example.com/rose.jpg",true,false
+"White Lily Set",35.00,"Premium Flowers","Elegant white lilies",40.00,15,"https://example.com/lily.jpg",false,true`;
+    
+    const blob = new Blob([template], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'products_template.csv';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
 
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'products_template.csv';
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-
-        toast({
-          title: 'Template Downloaded',
-          description: 'CSV template has been downloaded successfully.',
-        });
-      } else {
-        throw new Error('Failed to download template');
-      }
-    } catch (error: any) {
-      toast({
-        title: 'Download Failed',
-        description: error.message || 'Failed to download template.',
-        variant: 'destructive',
-      });
-    }
+    toast({
+      title: 'Template Downloaded',
+      description: 'CSV template has been downloaded successfully.',
+    });
   };
 
   return (
