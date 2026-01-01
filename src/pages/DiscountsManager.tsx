@@ -8,230 +8,205 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 import {
   Percent,
   Plus,
   Search,
-  Filter,
   Eye,
   Edit,
   Trash2,
-  Calendar,
-  Clock,
   Tag,
-  Gift,
-  Zap,
-  Target,
-  Users,
   Copy,
   Pause,
   Play,
-  Archive
+  Loader2
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
-interface Discount {
+interface Coupon {
   id: string;
-  name: string;
-  description: string;
-  type: 'percentage' | 'fixed' | 'buy-one-get-one' | 'free-shipping';
+  code: string;
+  type: string;
   value: number;
-  code?: string;
-  status: 'active' | 'inactive' | 'expired' | 'draft';
-  usageLimit: number;
-  usedCount: number;
-  minOrderValue?: number;
-  maxDiscount?: number;
-  applicableProducts: string[];
-  applicableCategories: string[];
-  targetCustomers: 'all' | 'new' | 'returning' | 'vip';
-  startDate: string;
-  endDate: string;
-  createdAt: string;
-  updatedAt: string;
-  createdBy: string;
-  isAutoApplied: boolean;
-  priority: number;
+  minimum_amount: number | null;
+  maximum_discount: number | null;
+  usage_limit: number | null;
+  used_count: number;
+  expires_at: string | null;
+  is_active: boolean;
+  created_at: string;
 }
 
 const DiscountsManager: React.FC = () => {
-  const [discounts, setDiscounts] = useState<Discount[]>([]);
-  const [selectedDiscount, setSelectedDiscount] = useState<Discount | null>(null);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
-  const [newDiscount, setNewDiscount] = useState({
-    name: '',
-    description: '',
-    type: 'percentage' as const,
-    value: 0,
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const [newCoupon, setNewCoupon] = useState({
     code: '',
-    usageLimit: 100,
-    minOrderValue: 0,
-    maxDiscount: 0,
-    applicableProducts: [] as string[],
-    applicableCategories: [] as string[],
-    targetCustomers: 'all' as const,
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    isAutoApplied: false,
-    priority: 1
+    type: 'percentage',
+    value: 0,
+    minimum_amount: 0,
+    maximum_discount: 0,
+    usage_limit: 100,
+    expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    is_active: true
   });
 
   useEffect(() => {
-    loadDiscounts();
+    loadCoupons();
   }, []);
 
-  const loadDiscounts = async () => {
-    // Mock data - in real app, this would be an API call
-    const mockDiscounts: Discount[] = [
-      {
-        id: '1',
-        name: 'Valentine\'s Day Sale',
-        description: '20% off on all rose bouquets for Valentine\'s Day',
-        type: 'percentage',
-        value: 20,
-        code: 'VALENTINE20',
-        status: 'active',
-        usageLimit: 500,
-        usedCount: 127,
-        minOrderValue: 50,
-        maxDiscount: 100,
-        applicableProducts: ['roses', 'bouquets'],
-        applicableCategories: ['flowers'],
-        targetCustomers: 'all',
-        startDate: '2024-02-01',
-        endDate: '2024-02-14',
-        createdAt: '2024-01-25',
-        updatedAt: '2024-01-25',
-        createdBy: 'Admin',
-        isAutoApplied: false,
-        priority: 1
-      },
-      {
-        id: '2',
-        name: 'New Customer Discount',
-        description: '15% off for first-time customers',
-        type: 'percentage',
-        value: 15,
-        code: 'WELCOME15',
-        status: 'active',
-        usageLimit: 1000,
-        usedCount: 89,
-        applicableProducts: [],
-        applicableCategories: [],
-        targetCustomers: 'new',
-        startDate: '2024-01-01',
-        endDate: '2024-12-31',
-        createdAt: '2024-01-01',
-        updatedAt: '2024-01-01',
-        createdBy: 'Admin',
-        isAutoApplied: true,
-        priority: 2
-      },
-      {
-        id: '3',
-        name: 'Free Shipping',
-        description: 'Free shipping on orders over SAR 100',
-        type: 'free-shipping',
-        value: 0,
-        status: 'active',
-        usageLimit: 0,
-        usedCount: 234,
-        minOrderValue: 100,
-        applicableProducts: [],
-        applicableCategories: [],
-        targetCustomers: 'all',
-        startDate: '2024-01-01',
-        endDate: '2024-12-31',
-        createdAt: '2024-01-01',
-        updatedAt: '2024-01-01',
-        createdBy: 'Admin',
-        isAutoApplied: true,
-        priority: 3
+  const loadCoupons = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('coupons')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading coupons:', error);
+        toast.error('Failed to load coupons');
+        return;
       }
-    ];
-    setDiscounts(mockDiscounts);
+
+      setCoupons(data || []);
+    } catch (error) {
+      console.error('Error loading coupons:', error);
+      toast.error('Failed to load coupons');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const createDiscount = () => {
-    const discount: Discount = {
-      id: Date.now().toString(),
-      name: newDiscount.name,
-      description: newDiscount.description,
-      type: newDiscount.type,
-      value: newDiscount.value,
-      code: newDiscount.code || undefined,
-      status: 'draft',
-      usageLimit: newDiscount.usageLimit,
-      usedCount: 0,
-      minOrderValue: newDiscount.minOrderValue || undefined,
-      maxDiscount: newDiscount.maxDiscount || undefined,
-      applicableProducts: newDiscount.applicableProducts,
-      applicableCategories: newDiscount.applicableCategories,
-      targetCustomers: newDiscount.targetCustomers,
-      startDate: newDiscount.startDate,
-      endDate: newDiscount.endDate,
-      createdAt: new Date().toISOString().split('T')[0],
-      updatedAt: new Date().toISOString().split('T')[0],
-      createdBy: 'Admin',
-      isAutoApplied: newDiscount.isAutoApplied,
-      priority: newDiscount.priority
-    };
+  const createCoupon = async () => {
+    if (!newCoupon.code.trim()) {
+      toast.error('Please enter a coupon code');
+      return;
+    }
 
-    setDiscounts([...discounts, discount]);
-    setIsCreateDialogOpen(false);
-    setNewDiscount({
-      name: '',
-      description: '',
-      type: 'percentage',
-      value: 0,
-      code: '',
-      usageLimit: 100,
-      minOrderValue: 0,
-      maxDiscount: 0,
-      applicableProducts: [],
-      applicableCategories: [],
-      targetCustomers: 'all',
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      isAutoApplied: false,
-      priority: 1
-    });
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('coupons')
+        .insert({
+          code: newCoupon.code.toUpperCase(),
+          type: newCoupon.type,
+          value: newCoupon.value,
+          minimum_amount: newCoupon.minimum_amount || null,
+          maximum_discount: newCoupon.maximum_discount || null,
+          usage_limit: newCoupon.usage_limit || null,
+          expires_at: newCoupon.expires_at || null,
+          is_active: newCoupon.is_active
+        });
+
+      if (error) {
+        console.error('Error creating coupon:', error);
+        toast.error('Failed to create coupon');
+        return;
+      }
+
+      toast.success('Coupon created successfully');
+      setIsCreateDialogOpen(false);
+      setNewCoupon({
+        code: '',
+        type: 'percentage',
+        value: 0,
+        minimum_amount: 0,
+        maximum_discount: 0,
+        usage_limit: 100,
+        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        is_active: true
+      });
+      loadCoupons();
+    } catch (error) {
+      console.error('Error creating coupon:', error);
+      toast.error('Failed to create coupon');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const activateDiscount = (discount: Discount) => {
-    const updatedDiscounts = discounts.map(disc =>
-      disc.id === discount.id ? { ...disc, status: 'active' as const } : disc
-    );
-    setDiscounts(updatedDiscounts);
+  const toggleCouponStatus = async (coupon: Coupon) => {
+    try {
+      const { error } = await supabase
+        .from('coupons')
+        .update({ is_active: !coupon.is_active })
+        .eq('id', coupon.id);
+
+      if (error) {
+        console.error('Error updating coupon:', error);
+        toast.error('Failed to update coupon');
+        return;
+      }
+
+      toast.success(`Coupon ${coupon.is_active ? 'deactivated' : 'activated'}`);
+      loadCoupons();
+    } catch (error) {
+      console.error('Error updating coupon:', error);
+      toast.error('Failed to update coupon');
+    }
   };
 
-  const deactivateDiscount = (discount: Discount) => {
-    const updatedDiscounts = discounts.map(disc =>
-      disc.id === discount.id ? { ...disc, status: 'inactive' as const } : disc
-    );
-    setDiscounts(updatedDiscounts);
+  const deleteCoupon = async (couponId: string) => {
+    if (!confirm('Are you sure you want to delete this coupon?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('coupons')
+        .delete()
+        .eq('id', couponId);
+
+      if (error) {
+        console.error('Error deleting coupon:', error);
+        toast.error('Failed to delete coupon');
+        return;
+      }
+
+      toast.success('Coupon deleted successfully');
+      loadCoupons();
+    } catch (error) {
+      console.error('Error deleting coupon:', error);
+      toast.error('Failed to delete coupon');
+    }
   };
 
-  const deleteDiscount = (discountId: string) => {
-    setDiscounts(discounts.filter(disc => disc.id !== discountId));
-  };
+  const duplicateCoupon = async (coupon: Coupon) => {
+    try {
+      const { error } = await supabase
+        .from('coupons')
+        .insert({
+          code: `${coupon.code}_COPY`,
+          type: coupon.type,
+          value: coupon.value,
+          minimum_amount: coupon.minimum_amount,
+          maximum_discount: coupon.maximum_discount,
+          usage_limit: coupon.usage_limit,
+          expires_at: coupon.expires_at,
+          is_active: false
+        });
 
-  const duplicateDiscount = (discount: Discount) => {
-    const duplicated: Discount = {
-      ...discount,
-      id: Date.now().toString(),
-      name: `${discount.name} (Copy)`,
-      code: discount.code ? `${discount.code}_COPY` : undefined,
-      status: 'draft',
-      usedCount: 0,
-      createdAt: new Date().toISOString().split('T')[0],
-      updatedAt: new Date().toISOString().split('T')[0]
-    };
-    setDiscounts([...discounts, duplicated]);
+      if (error) {
+        console.error('Error duplicating coupon:', error);
+        toast.error('Failed to duplicate coupon');
+        return;
+      }
+
+      toast.success('Coupon duplicated successfully');
+      loadCoupons();
+    } catch (error) {
+      console.error('Error duplicating coupon:', error);
+      toast.error('Failed to duplicate coupon');
+    }
   };
 
   const getTypeColor = (type: string) => {
@@ -240,67 +215,64 @@ const DiscountsManager: React.FC = () => {
         return 'bg-blue-100 text-blue-800';
       case 'fixed':
         return 'bg-green-100 text-green-800';
-      case 'buy-one-get-one':
-        return 'bg-purple-100 text-purple-800';
-      case 'free-shipping':
-        return 'bg-orange-100 text-orange-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800';
-      case 'inactive':
-        return 'bg-gray-100 text-gray-800';
-      case 'expired':
-        return 'bg-red-100 text-red-800';
-      case 'draft':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  const getStatusColor = (isActive: boolean, expiresAt: string | null) => {
+    if (expiresAt && new Date(expiresAt) < new Date()) {
+      return 'bg-red-100 text-red-800';
     }
+    return isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
   };
 
-  const getDiscountValue = (discount: Discount) => {
-    switch (discount.type) {
-      case 'percentage':
-        return `${discount.value}%`;
-      case 'fixed':
-        return `SAR ${discount.value}`;
-      case 'buy-one-get-one':
-        return 'BOGO';
-      case 'free-shipping':
-        return 'Free Shipping';
-      default:
-        return '';
+  const getStatusText = (isActive: boolean, expiresAt: string | null) => {
+    if (expiresAt && new Date(expiresAt) < new Date()) {
+      return 'Expired';
     }
+    return isActive ? 'Active' : 'Inactive';
   };
 
-  const filteredDiscounts = discounts.filter(discount => {
-    const matchesSearch = discount.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         discount.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         (discount.code && discount.code.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesStatus = statusFilter === 'all' || discount.status === statusFilter;
-    const matchesType = typeFilter === 'all' || discount.type === typeFilter;
+  const getDiscountValue = (coupon: Coupon) => {
+    return coupon.type === 'percentage' ? `${coupon.value}%` : `SAR ${coupon.value}`;
+  };
+
+  const filteredCoupons = coupons.filter(coupon => {
+    const matchesSearch = coupon.code.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const isExpired = coupon.expires_at && new Date(coupon.expires_at) < new Date();
+    let status = 'active';
+    if (isExpired) status = 'expired';
+    else if (!coupon.is_active) status = 'inactive';
+    
+    const matchesStatus = statusFilter === 'all' || status === statusFilter;
+    const matchesType = typeFilter === 'all' || coupon.type === typeFilter;
+    
     return matchesSearch && matchesStatus && matchesType;
   });
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Discounts & Offers Management</h1>
-          <p className="text-muted-foreground mt-1">Create and manage promotional discounts and special offers</p>
+          <h1 className="text-3xl font-bold text-foreground">Discounts & Coupons</h1>
+          <p className="text-muted-foreground mt-1">Manage promotional coupons and discounts</p>
         </div>
         <div className="flex items-center space-x-4">
           <div className="relative">
             <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search discounts..."
+              placeholder="Search coupons..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-8 w-64"
@@ -314,7 +286,6 @@ const DiscountsManager: React.FC = () => {
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="inactive">Inactive</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
               <SelectItem value="expired">Expired</SelectItem>
             </SelectContent>
           </Select>
@@ -326,80 +297,51 @@ const DiscountsManager: React.FC = () => {
               <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="percentage">Percentage</SelectItem>
               <SelectItem value="fixed">Fixed Amount</SelectItem>
-              <SelectItem value="buy-one-get-one">BOGO</SelectItem>
-              <SelectItem value="free-shipping">Free Shipping</SelectItem>
             </SelectContent>
           </Select>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
-                Create Discount
+                Create Coupon
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>Create New Discount</DialogTitle>
+                <DialogTitle>Create New Coupon</DialogTitle>
               </DialogHeader>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="name">Discount Name</Label>
+                    <Label htmlFor="code">Coupon Code</Label>
                     <Input
-                      id="name"
-                      placeholder="e.g. Summer Sale 2024"
-                      value={newDiscount.name}
-                      onChange={(e) => setNewDiscount({...newDiscount, name: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Describe the discount offer"
-                      rows={3}
-                      value={newDiscount.description}
-                      onChange={(e) => setNewDiscount({...newDiscount, description: e.target.value})}
+                      id="code"
+                      placeholder="e.g. SUMMER20"
+                      value={newCoupon.code}
+                      onChange={(e) => setNewCoupon({...newCoupon, code: e.target.value.toUpperCase()})}
                     />
                   </div>
                   <div>
                     <Label htmlFor="type">Discount Type</Label>
-                    <Select value={newDiscount.type} onValueChange={(value) => setNewDiscount({...newDiscount, type: value as any})}>
+                    <Select value={newCoupon.type} onValueChange={(value) => setNewCoupon({...newCoupon, type: value})}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="percentage">Percentage Discount</SelectItem>
                         <SelectItem value="fixed">Fixed Amount</SelectItem>
-                        <SelectItem value="buy-one-get-one">Buy One Get One</SelectItem>
-                        <SelectItem value="free-shipping">Free Shipping</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div>
                     <Label htmlFor="value">
-                      {newDiscount.type === 'percentage' ? 'Discount Percentage (%)' :
-                       newDiscount.type === 'fixed' ? 'Discount Amount (SAR)' :
-                       newDiscount.type === 'buy-one-get-one' ? 'BOGO Details' :
-                       'Free Shipping Threshold (SAR)'}
+                      {newCoupon.type === 'percentage' ? 'Discount Percentage (%)' : 'Discount Amount (SAR)'}
                     </Label>
                     <Input
                       id="value"
                       type="number"
-                      placeholder={newDiscount.type === 'percentage' ? '20' :
-                                 newDiscount.type === 'fixed' ? '50' :
-                                 newDiscount.type === 'free-shipping' ? '100' : 'Details'}
-                      value={newDiscount.value}
-                      onChange={(e) => setNewDiscount({...newDiscount, value: parseFloat(e.target.value) || 0})}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="code">Promo Code (Optional)</Label>
-                    <Input
-                      id="code"
-                      placeholder="e.g. SUMMER20"
-                      value={newDiscount.code}
-                      onChange={(e) => setNewDiscount({...newDiscount, code: e.target.value.toUpperCase()})}
+                      value={newCoupon.value}
+                      onChange={(e) => setNewCoupon({...newCoupon, value: parseFloat(e.target.value) || 0})}
                     />
                   </div>
                   <div>
@@ -407,53 +349,19 @@ const DiscountsManager: React.FC = () => {
                     <Input
                       id="usage-limit"
                       type="number"
-                      placeholder="100"
-                      value={newDiscount.usageLimit}
-                      onChange={(e) => setNewDiscount({...newDiscount, usageLimit: parseInt(e.target.value) || 0})}
+                      value={newCoupon.usage_limit}
+                      onChange={(e) => setNewCoupon({...newCoupon, usage_limit: parseInt(e.target.value) || 0})}
                     />
                   </div>
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="target-customers">Target Customers</Label>
-                    <Select value={newDiscount.targetCustomers} onValueChange={(value) => setNewDiscount({...newDiscount, targetCustomers: value as any})}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Customers</SelectItem>
-                        <SelectItem value="new">New Customers</SelectItem>
-                        <SelectItem value="returning">Returning Customers</SelectItem>
-                        <SelectItem value="vip">VIP Customers</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="start-date">Start Date</Label>
-                    <Input
-                      id="start-date"
-                      type="date"
-                      value={newDiscount.startDate}
-                      onChange={(e) => setNewDiscount({...newDiscount, startDate: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="end-date">End Date</Label>
-                    <Input
-                      id="end-date"
-                      type="date"
-                      value={newDiscount.endDate}
-                      onChange={(e) => setNewDiscount({...newDiscount, endDate: e.target.value})}
-                    />
-                  </div>
-                  <div>
                     <Label htmlFor="min-order">Minimum Order Value (SAR)</Label>
                     <Input
                       id="min-order"
                       type="number"
-                      placeholder="0"
-                      value={newDiscount.minOrderValue}
-                      onChange={(e) => setNewDiscount({...newDiscount, minOrderValue: parseFloat(e.target.value) || 0})}
+                      value={newCoupon.minimum_amount}
+                      onChange={(e) => setNewCoupon({...newCoupon, minimum_amount: parseFloat(e.target.value) || 0})}
                     />
                   </div>
                   <div>
@@ -461,25 +369,35 @@ const DiscountsManager: React.FC = () => {
                     <Input
                       id="max-discount"
                       type="number"
-                      placeholder="0"
-                      value={newDiscount.maxDiscount}
-                      onChange={(e) => setNewDiscount({...newDiscount, maxDiscount: parseFloat(e.target.value) || 0})}
+                      value={newCoupon.maximum_discount}
+                      onChange={(e) => setNewCoupon({...newCoupon, maximum_discount: parseFloat(e.target.value) || 0})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="expires-at">Expiry Date</Label>
+                    <Input
+                      id="expires-at"
+                      type="date"
+                      value={newCoupon.expires_at}
+                      onChange={(e) => setNewCoupon({...newCoupon, expires_at: e.target.value})}
                     />
                   </div>
                   <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="auto-applied"
-                      checked={newDiscount.isAutoApplied}
-                      onChange={(e) => setNewDiscount({...newDiscount, isAutoApplied: e.target.checked})}
+                    <Switch
+                      id="is-active"
+                      checked={newCoupon.is_active}
+                      onCheckedChange={(checked) => setNewCoupon({...newCoupon, is_active: checked})}
                     />
-                    <Label htmlFor="auto-applied">Auto-apply discount</Label>
+                    <Label htmlFor="is-active">Active immediately</Label>
                   </div>
                 </div>
               </div>
               <div className="flex justify-end space-x-2 mt-6">
                 <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
-                <Button onClick={createDiscount}>Create Discount</Button>
+                <Button onClick={createCoupon} disabled={isSaving}>
+                  {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Create Coupon
+                </Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -487,232 +405,192 @@ const DiscountsManager: React.FC = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Discounts</CardTitle>
-            <Tag className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{discounts.length}</div>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Tag className="h-5 w-5 text-primary" />
+              <div>
+                <p className="text-sm text-muted-foreground">Total Coupons</p>
+                <p className="text-2xl font-bold">{coupons.length}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active</CardTitle>
-            <Zap className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{discounts.filter(d => d.status === 'active').length}</div>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Play className="h-5 w-5 text-green-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Active</p>
+                <p className="text-2xl font-bold">
+                  {coupons.filter(c => c.is_active && (!c.expires_at || new Date(c.expires_at) > new Date())).length}
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Usage</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{discounts.reduce((sum, d) => sum + d.usedCount, 0).toLocaleString()}</div>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Percent className="h-5 w-5 text-blue-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Total Uses</p>
+                <p className="text-2xl font-bold">{coupons.reduce((sum, c) => sum + (c.used_count || 0), 0)}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {discounts.length > 0 ?
-                Math.round((discounts.filter(d => d.usedCount > 0).length / discounts.length) * 100) : 0}%
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Pause className="h-5 w-5 text-gray-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Expired</p>
+                <p className="text-2xl font-bold">
+                  {coupons.filter(c => c.expires_at && new Date(c.expires_at) < new Date()).length}
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Discounts Table */}
+      {/* Coupons Table */}
       <Card>
         <CardHeader>
-          <CardTitle>All Discounts & Offers</CardTitle>
+          <CardTitle>All Coupons</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Value</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Usage</TableHead>
-                <TableHead>Valid Until</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredDiscounts.map((discount) => (
-                <TableRow key={discount.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{discount.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {discount.code && `Code: ${discount.code}`} • {discount.targetCustomers}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getTypeColor(discount.type)}>
-                      {discount.type.replace('-', ' ')}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {getDiscountValue(discount)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(discount.status)}>
-                      {discount.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <div>{discount.usedCount} / {discount.usageLimit || '∞'}</div>
-                      <div className="text-muted-foreground">
-                        {discount.usageLimit > 0 ?
-                          Math.round((discount.usedCount / discount.usageLimit) * 100) : 100}%
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{new Date(discount.endDate).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedDiscount(discount);
-                          setIsPreviewDialogOpen(true);
-                        }}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => duplicateDiscount(discount)}
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                      {discount.status === 'draft' && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => activateDiscount(discount)}
-                        >
-                          <Play className="h-4 w-4" />
-                        </Button>
-                      )}
-                      {discount.status === 'active' && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deactivateDiscount(discount)}
-                        >
-                          <Pause className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteDiscount(discount.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          {filteredCoupons.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No coupons found. Create your first coupon to get started.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Code</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Value</TableHead>
+                  <TableHead>Usage</TableHead>
+                  <TableHead>Min Order</TableHead>
+                  <TableHead>Expires</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredCoupons.map((coupon) => (
+                  <TableRow key={coupon.id}>
+                    <TableCell className="font-mono font-bold">{coupon.code}</TableCell>
+                    <TableCell>
+                      <Badge className={getTypeColor(coupon.type)}>
+                        {coupon.type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{getDiscountValue(coupon)}</TableCell>
+                    <TableCell>
+                      {coupon.used_count || 0} / {coupon.usage_limit || '∞'}
+                    </TableCell>
+                    <TableCell>
+                      {coupon.minimum_amount ? `SAR ${coupon.minimum_amount}` : '-'}
+                    </TableCell>
+                    <TableCell>
+                      {coupon.expires_at ? new Date(coupon.expires_at).toLocaleDateString() : 'Never'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(coupon.is_active, coupon.expires_at)}>
+                        {getStatusText(coupon.is_active, coupon.expires_at)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedCoupon(coupon);
+                            setIsPreviewDialogOpen(true);
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleCouponStatus(coupon)}
+                        >
+                          {coupon.is_active ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => duplicateCoupon(coupon)}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteCoupon(coupon.id)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
       {/* Preview Dialog */}
       <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Discount Details</DialogTitle>
+            <DialogTitle>Coupon Details</DialogTitle>
           </DialogHeader>
-          {selectedDiscount && (
+          {selectedCoupon && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Badge className={getTypeColor(selectedDiscount.type)}>
-                    {selectedDiscount.type.replace('-', ' ')}
-                  </Badge>
-                  <Badge className={getStatusColor(selectedDiscount.status)}>
-                    {selectedDiscount.status}
-                  </Badge>
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Priority: {selectedDiscount.priority}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-xl font-bold mb-2">{selectedDiscount.name}</h3>
-                <p className="text-muted-foreground">{selectedDiscount.description}</p>
-              </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm font-medium">Discount Value</Label>
-                  <div className="text-lg font-semibold">{getDiscountValue(selectedDiscount)}</div>
+                  <p className="text-sm text-muted-foreground">Code</p>
+                  <p className="font-mono font-bold text-lg">{selectedCoupon.code}</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium">Usage</Label>
-                  <div className="text-lg font-semibold">
-                    {selectedDiscount.usedCount} / {selectedDiscount.usageLimit || '∞'}
-                  </div>
+                  <p className="text-sm text-muted-foreground">Type</p>
+                  <Badge className={getTypeColor(selectedCoupon.type)}>{selectedCoupon.type}</Badge>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium">Target Customers</Label>
-                  <div className="text-sm">{selectedDiscount.targetCustomers}</div>
+                  <p className="text-sm text-muted-foreground">Value</p>
+                  <p className="font-bold">{getDiscountValue(selectedCoupon)}</p>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium">Auto Applied</Label>
-                  <div className="text-sm">{selectedDiscount.isAutoApplied ? 'Yes' : 'No'}</div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <Badge className={getStatusColor(selectedCoupon.is_active, selectedCoupon.expires_at)}>
+                    {getStatusText(selectedCoupon.is_active, selectedCoupon.expires_at)}
+                  </Badge>
                 </div>
-              </div>
-
-              {selectedDiscount.code && (
                 <div>
-                  <Label className="text-sm font-medium">Promo Code</Label>
-                  <div className="flex items-center space-x-2">
-                    <code className="bg-muted px-2 py-1 rounded text-sm">{selectedDiscount.code}</code>
-                    <Button variant="outline" size="sm">
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <p className="text-sm text-muted-foreground">Min Order</p>
+                  <p>{selectedCoupon.minimum_amount ? `SAR ${selectedCoupon.minimum_amount}` : 'None'}</p>
                 </div>
-              )}
-
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-1">
-                    <Calendar className="h-4 w-4" />
-                    <span>Valid: {new Date(selectedDiscount.startDate).toLocaleDateString()} - {new Date(selectedDiscount.endDate).toLocaleDateString()}</span>
-                  </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Max Discount</p>
+                  <p>{selectedCoupon.maximum_discount ? `SAR ${selectedCoupon.maximum_discount}` : 'Unlimited'}</p>
                 </div>
-                <div className="flex items-center space-x-1">
-                  <Users className="h-4 w-4" />
-                  <span>Created by {selectedDiscount.createdBy}</span>
+                <div>
+                  <p className="text-sm text-muted-foreground">Usage</p>
+                  <p>{selectedCoupon.used_count || 0} / {selectedCoupon.usage_limit || '∞'}</p>
                 </div>
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsPreviewDialogOpen(false)}>Close</Button>
-                <Button>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Discount
-                </Button>
+                <div>
+                  <p className="text-sm text-muted-foreground">Expires</p>
+                  <p>{selectedCoupon.expires_at ? new Date(selectedCoupon.expires_at).toLocaleDateString() : 'Never'}</p>
+                </div>
               </div>
             </div>
           )}
