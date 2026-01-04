@@ -16,6 +16,7 @@ import { FlowerCard, FlowerData } from './FlowerCard';
 import { VisualBouquetCanvas, CanvasFlower } from './VisualBouquetCanvas';
 import { SavedDesignsPanel } from './SavedDesignsPanel';
 import { BouquetExport } from './BouquetExport';
+import { GiftMessageCard, GiftCardData } from './GiftMessageCard';
 import { OCCASION_PRESETS } from './occasionPresets';
 import { useBouquetFlowers } from '@/hooks/useBouquetFlowers';
 import { useAuth } from '@/contexts/AuthContext';
@@ -67,6 +68,13 @@ export const ImprovedBouquetBuilder: React.FC = () => {
   const [wrapping, setWrapping] = useState<'paper' | 'cellophane' | 'burlap' | 'fabric'>('paper');
   const [ribbonColor, setRibbonColor] = useState('#dc2626');
   const [selectedOccasion, setSelectedOccasion] = useState<string | null>(null);
+  const [giftCard, setGiftCard] = useState<GiftCardData>({
+    enabled: false,
+    style: 'elegant',
+    recipientName: '',
+    senderName: '',
+    message: '',
+  });
 
   // Save dialog state
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -84,7 +92,8 @@ export const ImprovedBouquetBuilder: React.FC = () => {
   const basePrice = 15;
   const wrappingPrice = WRAPPING_OPTIONS.find(w => w.id === wrapping)?.price || 0;
   const flowersPrice = canvasItems.reduce((sum, item) => sum + item.price, 0);
-  const totalPrice = basePrice + wrappingPrice + flowersPrice;
+  const giftCardPrice = giftCard.enabled ? (giftCard.style === 'classic' ? 2 : 3) : 0;
+  const totalPrice = basePrice + wrappingPrice + flowersPrice + giftCardPrice;
 
   // Save to history
   const saveToHistory = useCallback((items: CanvasFlower[]) => {
@@ -291,12 +300,13 @@ export const ImprovedBouquetBuilder: React.FC = () => {
         wrapping,
         ribbonColor,
         occasion: selectedOccasion,
+        giftCard: giftCard.enabled ? giftCard : null,
       }
     };
 
     addItem(bouquetData);
     toast.success('Added to cart!');
-  }, [canvasItems, totalPrice, bouquetName, wrapping, ribbonColor, selectedOccasion, addItem]);
+  }, [canvasItems, totalPrice, bouquetName, wrapping, ribbonColor, selectedOccasion, giftCard, addItem]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -516,6 +526,9 @@ export const ImprovedBouquetBuilder: React.FC = () => {
                 </CardContent>
               </Card>
 
+              {/* Gift Message Card */}
+              <GiftMessageCard value={giftCard} onChange={setGiftCard} />
+
               {/* Price Summary */}
               <Card>
                 <CardHeader className="pb-2">
@@ -534,6 +547,12 @@ export const ImprovedBouquetBuilder: React.FC = () => {
                     <span className="text-muted-foreground">Wrapping</span>
                     <span>{formatPrice(wrappingPrice)}</span>
                   </div>
+                  {giftCard.enabled && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Gift Card</span>
+                      <span>{formatPrice(giftCardPrice)}</span>
+                    </div>
+                  )}
                   <Separator />
                   <div className="flex justify-between font-bold text-base">
                     <span>Total</span>
