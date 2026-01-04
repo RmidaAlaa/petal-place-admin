@@ -12,7 +12,7 @@ export interface FlowerData {
   price: number;
   color: string;
   image: string;
-  category: string;
+  category: 'focal' | 'filler' | 'greenery' | string;
   size: 'small' | 'medium' | 'large';
   stock: number;
 }

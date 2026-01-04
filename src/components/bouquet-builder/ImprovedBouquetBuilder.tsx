@@ -8,7 +8,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,6 +15,8 @@ import { Switch } from '@/components/ui/switch';
 import { FlowerCard, FlowerData } from './FlowerCard';
 import { VisualBouquetCanvas, CanvasFlower } from './VisualBouquetCanvas';
 import { SavedDesignsPanel } from './SavedDesignsPanel';
+import { BouquetExport } from './BouquetExport';
+import { OCCASION_PRESETS } from './occasionPresets';
 import { useBouquetFlowers } from '@/hooks/useBouquetFlowers';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
@@ -23,7 +24,7 @@ import { useCurrency } from '@/contexts/CurrencyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Save, RotateCcw, ShoppingCart, Undo, Redo, Grid, Flower2,
-  Ribbon, Package, Palette, Sparkles
+  Ribbon, Package, Sparkles, Download
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -50,13 +51,6 @@ const RIBBON_COLORS = [
   { name: 'Black', color: '#1f2937' },
 ];
 
-const OCCASION_PRESETS = [
-  { id: 'romantic', name: 'Romantic', icon: '💕', description: 'Red roses & pink accents' },
-  { id: 'birthday', name: 'Birthday', icon: '🎂', description: 'Colorful & cheerful mix' },
-  { id: 'sympathy', name: 'Sympathy', icon: '🕊️', description: 'White & soft tones' },
-  { id: 'congratulations', name: 'Congrats', icon: '🎉', description: 'Bright & celebratory' },
-];
-
 export const ImprovedBouquetBuilder: React.FC = () => {
   const { flowers, loading: flowersLoading } = useBouquetFlowers();
   const { state: authState } = useAuth();
@@ -76,6 +70,7 @@ export const ImprovedBouquetBuilder: React.FC = () => {
 
   // Save dialog state
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
   const [bouquetName, setBouquetName] = useState('');
   const [bouquetDescription, setBouquetDescription] = useState('');
   const [isPublic, setIsPublic] = useState(false);
@@ -189,8 +184,28 @@ export const ImprovedBouquetBuilder: React.FC = () => {
   const clearBouquet = useCallback(() => {
     setCanvasItems([]);
     setSelectedItem(null);
+    setSelectedOccasion(null);
     saveToHistory([]);
     toast.success('Bouquet cleared');
+  }, [saveToHistory]);
+
+  // Apply occasion preset
+  const applyPreset = useCallback((presetId: string) => {
+    const preset = OCCASION_PRESETS.find(p => p.id === presetId);
+    if (!preset) return;
+
+    // Generate fresh flowers with new IDs
+    const freshFlowers = preset.flowers.map((flower, index) => ({
+      ...flower,
+      canvasId: `preset-${flower.id}-${Date.now()}-${index}`,
+    }));
+
+    setCanvasItems(freshFlowers);
+    setWrapping(preset.wrapping);
+    setRibbonColor(preset.ribbonColor);
+    setSelectedOccasion(presetId);
+    saveToHistory(freshFlowers);
+    toast.success(`${preset.name} preset applied!`);
   }, [saveToHistory]);
 
   // Load design from saved
@@ -201,6 +216,7 @@ export const ImprovedBouquetBuilder: React.FC = () => {
     }
     if (designData?.wrapping) setWrapping(designData.wrapping);
     if (designData?.ribbonColor) setRibbonColor(designData.ribbonColor);
+    if (designData?.occasion) setSelectedOccasion(designData.occasion);
     toast.success('Design loaded!');
   }, [saveToHistory]);
 
@@ -340,6 +356,10 @@ export const ImprovedBouquetBuilder: React.FC = () => {
               <Badge variant="secondary" className="text-base px-3 py-1">
                 {formatPrice(totalPrice)}
               </Badge>
+              <Button variant="outline" size="sm" onClick={() => setShowExportDialog(true)} disabled={canvasItems.length === 0}>
+                <Download className="w-4 h-4 mr-1" />
+                Export
+              </Button>
               <Button variant="outline" size="sm" onClick={() => setShowSaveDialog(true)}>
                 <Save className="w-4 h-4 mr-1" />
                 Save
@@ -414,7 +434,8 @@ export const ImprovedBouquetBuilder: React.FC = () => {
               {/* Occasion Presets */}
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Quick Start</CardTitle>
+                  <CardTitle className="text-base">Quick Start Presets</CardTitle>
+                  <p className="text-xs text-muted-foreground">Click to auto-fill your bouquet</p>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-2">
@@ -423,11 +444,12 @@ export const ImprovedBouquetBuilder: React.FC = () => {
                         key={preset.id}
                         variant={selectedOccasion === preset.id ? "default" : "outline"}
                         size="sm"
-                        className="h-auto py-2 flex-col"
-                        onClick={() => setSelectedOccasion(preset.id)}
+                        className="h-auto py-3 flex-col gap-1 transition-all hover:scale-105"
+                        onClick={() => applyPreset(preset.id)}
                       >
-                        <span className="text-lg mb-1">{preset.icon}</span>
-                        <span className="text-xs">{preset.name}</span>
+                        <span className="text-xl">{preset.icon}</span>
+                        <span className="text-xs font-medium">{preset.name}</span>
+                        <span className="text-[10px] text-muted-foreground line-clamp-1">{preset.description}</span>
                       </Button>
                     ))}
                   </div>
@@ -593,6 +615,16 @@ export const ImprovedBouquetBuilder: React.FC = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Export Dialog */}
+        <BouquetExport
+          isOpen={showExportDialog}
+          onClose={() => setShowExportDialog(false)}
+          items={canvasItems}
+          wrapping={wrapping}
+          ribbonColor={ribbonColor}
+          bouquetName={bouquetName || `Custom Bouquet - ${new Date().toLocaleDateString()}`}
+        />
       </div>
     </div>
   );
