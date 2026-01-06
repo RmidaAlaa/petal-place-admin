@@ -17,6 +17,8 @@ import { VisualBouquetCanvas, CanvasFlower } from './VisualBouquetCanvas';
 import { SavedDesignsPanel } from './SavedDesignsPanel';
 import { BouquetExport } from './BouquetExport';
 import { GiftMessageCard, GiftCardData } from './GiftMessageCard';
+import { SizeSelector, BouquetSize, getSizeMultipliers } from './SizeSelector';
+import { DeliveryScheduler, DeliverySchedule } from './DeliveryScheduler';
 import { OCCASION_PRESETS } from './occasionPresets';
 import { useBouquetFlowers } from '@/hooks/useBouquetFlowers';
 import { useAuth } from '@/contexts/AuthContext';
@@ -68,6 +70,11 @@ export const ImprovedBouquetBuilder: React.FC = () => {
   const [wrapping, setWrapping] = useState<'paper' | 'cellophane' | 'burlap' | 'fabric'>('paper');
   const [ribbonColor, setRibbonColor] = useState('#dc2626');
   const [selectedOccasion, setSelectedOccasion] = useState<string | null>(null);
+  const [bouquetSize, setBouquetSize] = useState<BouquetSize>('medium');
+  const [deliverySchedule, setDeliverySchedule] = useState<DeliverySchedule>({
+    date: null,
+    timeSlot: null,
+  });
   const [giftCard, setGiftCard] = useState<GiftCardData>({
     enabled: false,
     style: 'elegant',
@@ -93,7 +100,9 @@ export const ImprovedBouquetBuilder: React.FC = () => {
   const wrappingPrice = WRAPPING_OPTIONS.find(w => w.id === wrapping)?.price || 0;
   const flowersPrice = canvasItems.reduce((sum, item) => sum + item.price, 0);
   const giftCardPrice = giftCard.enabled ? (giftCard.style === 'classic' ? 2 : 3) : 0;
-  const totalPrice = basePrice + wrappingPrice + flowersPrice + giftCardPrice;
+  const { priceMultiplier, scaleMultiplier } = getSizeMultipliers(bouquetSize);
+  const subtotal = basePrice + wrappingPrice + flowersPrice + giftCardPrice;
+  const totalPrice = Number((subtotal * priceMultiplier).toFixed(2));
 
   // Save to history
   const saveToHistory = useCallback((items: CanvasFlower[]) => {
@@ -300,13 +309,15 @@ export const ImprovedBouquetBuilder: React.FC = () => {
         wrapping,
         ribbonColor,
         occasion: selectedOccasion,
+        size: bouquetSize,
+        deliverySchedule: deliverySchedule.date ? deliverySchedule : null,
         giftCard: giftCard.enabled ? giftCard : null,
       }
     };
 
     addItem(bouquetData);
     toast.success('Added to cart!');
-  }, [canvasItems, totalPrice, bouquetName, wrapping, ribbonColor, selectedOccasion, giftCard, addItem]);
+  }, [canvasItems, totalPrice, bouquetName, wrapping, ribbonColor, selectedOccasion, bouquetSize, deliverySchedule, giftCard, addItem]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -339,44 +350,45 @@ export const ImprovedBouquetBuilder: React.FC = () => {
         </div>
 
         {/* Toolbar */}
-        <Card className="mb-6">
-          <CardContent className="p-3 flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={undo} disabled={historyIndex <= 0}>
+        <Card className="mb-4 sm:mb-6">
+          <CardContent className="p-2 sm:p-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3">
+            <div className="flex items-center justify-center sm:justify-start gap-1 sm:gap-2">
+              <Button variant="outline" size="sm" onClick={undo} disabled={historyIndex <= 0} className="h-8 w-8 sm:h-9 sm:w-auto p-0 sm:px-3">
                 <Undo className="w-4 h-4" />
               </Button>
-              <Button variant="outline" size="sm" onClick={redo} disabled={historyIndex >= history.length - 1}>
+              <Button variant="outline" size="sm" onClick={redo} disabled={historyIndex >= history.length - 1} className="h-8 w-8 sm:h-9 sm:w-auto p-0 sm:px-3">
                 <Redo className="w-4 h-4" />
               </Button>
-              <Separator orientation="vertical" className="h-6 mx-2" />
+              <Separator orientation="vertical" className="h-6 mx-1 sm:mx-2 hidden sm:block" />
               <Button
                 variant={showGrid ? "secondary" : "outline"}
                 size="sm"
                 onClick={() => setShowGrid(!showGrid)}
+                className="h-8 w-8 sm:h-9 sm:w-auto p-0 sm:px-3"
               >
                 <Grid className="w-4 h-4" />
               </Button>
-              <Button variant="outline" size="sm" onClick={clearBouquet}>
-                <RotateCcw className="w-4 h-4 mr-1" />
-                Clear
+              <Button variant="outline" size="sm" onClick={clearBouquet} className="h-8 sm:h-9">
+                <RotateCcw className="w-4 h-4 sm:mr-1" />
+                <span className="hidden sm:inline">Clear</span>
               </Button>
             </div>
             
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-base px-3 py-1">
+            <div className="flex items-center justify-center sm:justify-end gap-1.5 sm:gap-2">
+              <Badge variant="secondary" className="text-sm sm:text-base px-2 sm:px-3 py-1">
                 {formatPrice(totalPrice)}
               </Badge>
-              <Button variant="outline" size="sm" onClick={() => setShowExportDialog(true)} disabled={canvasItems.length === 0}>
-                <Download className="w-4 h-4 mr-1" />
-                Export
+              <Button variant="outline" size="sm" onClick={() => setShowExportDialog(true)} disabled={canvasItems.length === 0} className="h-8 sm:h-9">
+                <Download className="w-4 h-4 sm:mr-1" />
+                <span className="hidden sm:inline">Export</span>
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setShowSaveDialog(true)}>
-                <Save className="w-4 h-4 mr-1" />
-                Save
+              <Button variant="outline" size="sm" onClick={() => setShowSaveDialog(true)} className="h-8 sm:h-9">
+                <Save className="w-4 h-4 sm:mr-1" />
+                <span className="hidden sm:inline">Save</span>
               </Button>
-              <Button size="sm" onClick={addToCart} disabled={canvasItems.length === 0}>
-                <ShoppingCart className="w-4 h-4 mr-1" />
-                Add to Cart
+              <Button size="sm" onClick={addToCart} disabled={canvasItems.length === 0} className="h-8 sm:h-9">
+                <ShoppingCart className="w-4 h-4 sm:mr-1" />
+                <span className="hidden sm:inline">Add to Cart</span>
               </Button>
             </div>
           </CardContent>
@@ -388,9 +400,9 @@ export const ImprovedBouquetBuilder: React.FC = () => {
           onDragEnd={handleDragEnd}
           collisionDetection={pointerWithin}
         >
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
             {/* Left Panel - Flower Inventory */}
-            <div className="lg:col-span-3 space-y-4">
+            <div className="lg:col-span-3 space-y-4 order-2 lg:order-first">
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
@@ -400,14 +412,14 @@ export const ImprovedBouquetBuilder: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   {flowersLoading ? (
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-2 gap-2">
                       {[1, 2, 3, 4].map(i => (
-                        <Skeleton key={i} className="h-24 w-full rounded-lg" />
+                        <Skeleton key={i} className="h-20 sm:h-24 w-full rounded-lg" />
                       ))}
                     </div>
                   ) : (
-                    <ScrollArea className="h-[400px] pr-2">
-                      <div className="grid grid-cols-2 gap-2">
+                    <ScrollArea className="h-[200px] sm:h-[300px] lg:h-[400px] pr-2">
+                      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-2 gap-2">
                         {flowers.map((flower) => (
                           <FlowerCard key={flower.id} flower={flower} compact />
                         ))}
@@ -417,14 +429,16 @@ export const ImprovedBouquetBuilder: React.FC = () => {
                 </CardContent>
               </Card>
 
-              {/* Saved Designs */}
-              <SavedDesignsPanel onLoadDesign={loadDesign} />
+              {/* Saved Designs - Hidden on mobile */}
+              <div className="hidden sm:block">
+                <SavedDesignsPanel onLoadDesign={loadDesign} />
+              </div>
             </div>
 
             {/* Center - Canvas */}
-            <div className="lg:col-span-6">
+            <div className="lg:col-span-6 order-first lg:order-none">
               <Card className="h-full">
-                <CardContent className="p-6 flex items-center justify-center min-h-[500px]">
+                <CardContent className="p-3 sm:p-6 flex items-center justify-center min-h-[350px] sm:min-h-[500px]">
                   <VisualBouquetCanvas
                     items={canvasItems}
                     selectedItem={selectedItem}
@@ -434,13 +448,14 @@ export const ImprovedBouquetBuilder: React.FC = () => {
                     showGrid={showGrid}
                     wrapping={wrapping}
                     ribbonColor={ribbonColor}
+                    sizeScale={scaleMultiplier}
                   />
                 </CardContent>
               </Card>
             </div>
 
             {/* Right Panel - Customization */}
-            <div className="lg:col-span-3 space-y-4">
+            <div className="lg:col-span-3 space-y-4 order-3">
               {/* Occasion Presets */}
               <Card>
                 <CardHeader className="pb-3">
@@ -448,18 +463,18 @@ export const ImprovedBouquetBuilder: React.FC = () => {
                   <p className="text-xs text-muted-foreground">Click to auto-fill your bouquet</p>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-2 gap-2">
                     {OCCASION_PRESETS.map((preset) => (
                       <Button
                         key={preset.id}
                         variant={selectedOccasion === preset.id ? "default" : "outline"}
                         size="sm"
-                        className="h-auto py-3 flex-col gap-1 transition-all hover:scale-105"
+                        className="h-auto py-2 sm:py-3 flex-col gap-0.5 sm:gap-1 transition-all hover:scale-105"
                         onClick={() => applyPreset(preset.id)}
                       >
-                        <span className="text-xl">{preset.icon}</span>
-                        <span className="text-xs font-medium">{preset.name}</span>
-                        <span className="text-[10px] text-muted-foreground line-clamp-1">{preset.description}</span>
+                        <span className="text-lg sm:text-xl">{preset.icon}</span>
+                        <span className="text-[10px] sm:text-xs font-medium">{preset.name}</span>
+                        <span className="text-[8px] sm:text-[10px] text-muted-foreground line-clamp-1 hidden sm:block">{preset.description}</span>
                       </Button>
                     ))}
                   </div>
@@ -526,6 +541,12 @@ export const ImprovedBouquetBuilder: React.FC = () => {
                 </CardContent>
               </Card>
 
+              {/* Size Selector */}
+              <SizeSelector value={bouquetSize} onChange={setBouquetSize} />
+
+              {/* Delivery Scheduler */}
+              <DeliveryScheduler value={deliverySchedule} onChange={setDeliverySchedule} />
+
               {/* Gift Message Card */}
               <GiftMessageCard value={giftCard} onChange={setGiftCard} />
 
@@ -553,11 +574,22 @@ export const ImprovedBouquetBuilder: React.FC = () => {
                       <span>{formatPrice(giftCardPrice)}</span>
                     </div>
                   )}
+                  {bouquetSize !== 'medium' && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Size ({bouquetSize})</span>
+                      <span>{priceMultiplier < 1 ? '-20%' : '+40%'}</span>
+                    </div>
+                  )}
                   <Separator />
                   <div className="flex justify-between font-bold text-base">
                     <span>Total</span>
                     <span className="text-primary">{formatPrice(totalPrice)}</span>
                   </div>
+                  {deliverySchedule.date && (
+                    <div className="text-xs text-muted-foreground pt-2 border-t">
+                      📅 Delivery: {deliverySchedule.date.toLocaleDateString()}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>

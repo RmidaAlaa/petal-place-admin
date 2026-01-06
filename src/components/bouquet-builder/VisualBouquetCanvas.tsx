@@ -176,6 +176,7 @@ interface VisualBouquetCanvasProps {
   showGrid?: boolean;
   wrapping: 'paper' | 'cellophane' | 'burlap' | 'fabric';
   ribbonColor: string;
+  sizeScale?: number;
 }
 
 export const VisualBouquetCanvas: React.FC<VisualBouquetCanvasProps> = ({
@@ -187,6 +188,7 @@ export const VisualBouquetCanvas: React.FC<VisualBouquetCanvasProps> = ({
   showGrid = false,
   wrapping,
   ribbonColor,
+  sizeScale = 1,
 }) => {
   const { setNodeRef, isOver } = useDroppable({ id: 'bouquet-canvas' });
 
@@ -202,15 +204,19 @@ export const VisualBouquetCanvas: React.FC<VisualBouquetCanvasProps> = ({
   }, [onItemSelect]);
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center w-full">
       {/* Main Canvas */}
       <div
         ref={setNodeRef}
         className={cn(
           "relative rounded-full transition-all duration-300",
-          "w-80 h-80 md:w-96 md:h-96",
+          "w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96",
           isOver && "ring-4 ring-primary/50"
         )}
+        style={{
+          transform: `scale(${sizeScale})`,
+          transformOrigin: 'center center',
+        }}
         onClick={handleCanvasClick}
       >
         {/* Outer wrapping layer */}
