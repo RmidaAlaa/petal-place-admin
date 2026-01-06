@@ -19,6 +19,9 @@ import { BouquetExport } from './BouquetExport';
 import { GiftMessageCard, GiftCardData } from './GiftMessageCard';
 import { SizeSelector, BouquetSize, getSizeMultipliers } from './SizeSelector';
 import { DeliveryScheduler, DeliverySchedule } from './DeliveryScheduler';
+import { SeasonalRecommendations } from './SeasonalRecommendations';
+import { BouquetPreviewThumbnail } from './BouquetPreviewThumbnail';
+import { BouquetShare } from './BouquetShare';
 import { OCCASION_PRESETS } from './occasionPresets';
 import { useBouquetFlowers } from '@/hooks/useBouquetFlowers';
 import { useAuth } from '@/contexts/AuthContext';
@@ -378,6 +381,12 @@ export const ImprovedBouquetBuilder: React.FC = () => {
               <Badge variant="secondary" className="text-sm sm:text-base px-2 sm:px-3 py-1">
                 {formatPrice(totalPrice)}
               </Badge>
+              <BouquetShare 
+                bouquetName={bouquetName}
+                items={canvasItems}
+                totalPrice={totalPrice}
+                disabled={canvasItems.length === 0}
+              />
               <Button variant="outline" size="sm" onClick={() => setShowExportDialog(true)} disabled={canvasItems.length === 0} className="h-8 sm:h-9">
                 <Download className="w-4 h-4 sm:mr-1" />
                 <span className="hidden sm:inline">Export</span>
@@ -429,6 +438,9 @@ export const ImprovedBouquetBuilder: React.FC = () => {
                 </CardContent>
               </Card>
 
+              {/* Seasonal Recommendations */}
+              <SeasonalRecommendations flowers={flowers} />
+              
               {/* Saved Designs - Hidden on mobile */}
               <div className="hidden sm:block">
                 <SavedDesignsPanel onLoadDesign={loadDesign} />
@@ -436,7 +448,7 @@ export const ImprovedBouquetBuilder: React.FC = () => {
             </div>
 
             {/* Center - Canvas */}
-            <div className="lg:col-span-6 order-first lg:order-none">
+            <div className="lg:col-span-6 order-first lg:order-none space-y-4">
               <Card className="h-full">
                 <CardContent className="p-3 sm:p-6 flex items-center justify-center min-h-[350px] sm:min-h-[500px]">
                   <VisualBouquetCanvas
@@ -452,6 +464,15 @@ export const ImprovedBouquetBuilder: React.FC = () => {
                   />
                 </CardContent>
               </Card>
+              
+              {/* Preview Thumbnail - Mobile only */}
+              <div className="block lg:hidden">
+                <BouquetPreviewThumbnail
+                  items={canvasItems}
+                  wrapping={wrapping}
+                  ribbonColor={ribbonColor}
+                />
+              </div>
             </div>
 
             {/* Right Panel - Customization */}
