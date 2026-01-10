@@ -145,6 +145,7 @@ const Navigation = () => {
                   <SelectItem value="USD">USD $</SelectItem>
                   <SelectItem value="SAR">SAR ﷼</SelectItem>
                   <SelectItem value="TND">TND DT</SelectItem>
+                  <SelectItem value="EUR">EUR €</SelectItem>
                 </SelectContent>
               </Select>
             </div>

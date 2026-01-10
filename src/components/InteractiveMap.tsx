@@ -1,9 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Navigation, Phone, Clock, Star, Plus, Trash2, Edit } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { MapPin, Navigation, Phone, Clock, Star, Plus, Trash2, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface Location {
   id: string;
@@ -26,9 +30,16 @@ interface InteractiveMapProps {
 }
 
 const InteractiveMap: React.FC<InteractiveMapProps> = ({ className }) => {
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
+  const markersRef = useRef<mapboxgl.Marker[]>([]);
+  
   const [locations, setLocations] = useState<Location[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [isAdminMode, setIsAdminMode] = useState(false);
+  const [mapboxToken, setMapboxToken] = useState<string>('');
+  const [showTokenInput, setShowTokenInput] = useState(false);
+  const [mapLoaded, setMapLoaded] = useState(false);
   const [newLocation, setNewLocation] = useState<Partial<Location>>({
     type: 'store',
     isActive: true
@@ -44,9 +55,9 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ className }) => {
       address: '123 King Fahd Road, Riyadh, Saudi Arabia',
       coordinates: { lat: 24.7136, lng: 46.6753 },
       phone: '+966 50 123 4567',
-      hours: 'Mon-Fri: 9:00 AM - 10:00 PM, Sat-Sun: 10:00 AM - 11:00 PM',
+      hours: 'Mon-Fri: 9:00 AM - 10:00 PM',
       rating: 4.8,
-      description: 'Our flagship store featuring the complete collection of fresh flowers and custom arrangements.',
+      description: 'Our flagship store featuring the complete collection of fresh flowers.',
       isActive: true
     },
     {
@@ -58,7 +69,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ className }) => {
       phone: '+966 50 234 5678',
       hours: 'Mon-Sun: 10:00 AM - 9:00 PM',
       rating: 4.9,
-      description: 'Premium gallery showcasing luxury floral arrangements and wedding collections.',
+      description: 'Premium gallery showcasing luxury floral arrangements.',
       isActive: true
     },
     {
@@ -70,7 +81,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ className }) => {
       phone: '+966 50 345 6789',
       hours: 'Mon-Sun: 9:00 AM - 11:00 PM',
       rating: 4.7,
-      description: 'Full-service store with delivery center and custom bouquet design studio.',
+      description: 'Full-service store with delivery center.',
       isActive: true
     },
     {
@@ -80,9 +91,9 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ className }) => {
       address: '321 King Fahd Road, Dammam, Saudi Arabia',
       coordinates: { lat: 26.4207, lng: 50.0888 },
       phone: '+966 50 456 7890',
-      hours: 'Mon-Sat: 10:00 AM - 10:00 PM, Sun: 2:00 PM - 10:00 PM',
+      hours: 'Mon-Sat: 10:00 AM - 10:00 PM',
       rating: 4.6,
-      description: 'Specialized gallery for premium and exotic flower collections.',
+      description: 'Specialized gallery for premium flower collections.',
       isActive: true
     },
     {
@@ -94,25 +105,12 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ className }) => {
       phone: '+966 50 567 8901',
       hours: 'Mon-Fri: 6:00 AM - 6:00 PM',
       rating: 4.9,
-      description: 'Main distribution center ensuring fresh flower delivery across the kingdom.',
+      description: 'Main distribution center for fresh flower delivery.',
       isActive: true
     },
-    {
-      id: '6',
-      name: 'Mecca Showroom',
-      type: 'store',
-      address: 'Al Haram District, Mecca, Saudi Arabia',
-      coordinates: { lat: 21.3891, lng: 39.8579 },
-      phone: '+966 50 678 9012',
-      hours: 'Mon-Sun: 8:00 AM - 12:00 AM',
-      rating: 4.8,
-      description: 'Specialized store for religious occasions and traditional arrangements.',
-      isActive: true
-    }
   ];
 
   useEffect(() => {
-    // Load locations from localStorage or use defaults
     const savedLocations = localStorage.getItem('roses-garden-locations');
     if (savedLocations) {
       setLocations(JSON.parse(savedLocations));
@@ -120,47 +118,148 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ className }) => {
       setLocations(defaultLocations);
       localStorage.setItem('roses-garden-locations', JSON.stringify(defaultLocations));
     }
+
+    // Try to get saved token
+    const savedToken = localStorage.getItem('mapbox-token');
+    if (savedToken) {
+      setMapboxToken(savedToken);
+    }
   }, []);
+
+  useEffect(() => {
+    if (!mapContainer.current || !mapboxToken || map.current) return;
+
+    try {
+      mapboxgl.accessToken = mapboxToken;
+      
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/light-v11',
+        center: [45.0792, 23.8859], // Center on Saudi Arabia
+        zoom: 5,
+        pitch: 30,
+      });
+
+      map.current.addControl(
+        new mapboxgl.NavigationControl({
+          visualizePitch: true,
+        }),
+        'top-right'
+      );
+
+      map.current.on('load', () => {
+        setMapLoaded(true);
+        addMarkers();
+      });
+
+      map.current.on('error', (e) => {
+        console.error('Mapbox error:', e);
+        toast.error('Failed to load map. Please check your Mapbox token.');
+      });
+
+    } catch (error) {
+      console.error('Error initializing map:', error);
+      toast.error('Failed to initialize map');
+    }
+
+    return () => {
+      markersRef.current.forEach(marker => marker.remove());
+      map.current?.remove();
+      map.current = null;
+    };
+  }, [mapboxToken]);
+
+  useEffect(() => {
+    if (mapLoaded) {
+      addMarkers();
+    }
+  }, [locations, mapLoaded]);
+
+  const addMarkers = () => {
+    // Clear existing markers
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
+
+    if (!map.current) return;
+
+    locations.filter(loc => loc.isActive).forEach((location) => {
+      const el = document.createElement('div');
+      el.className = 'marker';
+      el.style.cssText = `
+        width: 32px;
+        height: 32px;
+        background-color: hsl(var(--primary));
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s;
+      `;
+      el.innerHTML = getLocationTypeIcon(location.type);
+      
+      el.addEventListener('mouseenter', () => {
+        el.style.transform = 'scale(1.2)';
+      });
+      el.addEventListener('mouseleave', () => {
+        el.style.transform = 'scale(1)';
+      });
+      el.addEventListener('click', () => {
+        setSelectedLocation(location);
+        map.current?.flyTo({
+          center: [location.coordinates.lng, location.coordinates.lat],
+          zoom: 12,
+          duration: 1500,
+        });
+      });
+
+      const marker = new mapboxgl.Marker(el)
+        .setLngLat([location.coordinates.lng, location.coordinates.lat])
+        .addTo(map.current!);
+      
+      markersRef.current.push(marker);
+    });
+  };
 
   const saveLocations = (newLocations: Location[]) => {
     setLocations(newLocations);
     localStorage.setItem('roses-garden-locations', JSON.stringify(newLocations));
   };
 
+  const handleSaveToken = () => {
+    if (mapboxToken.trim()) {
+      localStorage.setItem('mapbox-token', mapboxToken);
+      setShowTokenInput(false);
+      toast.success('Mapbox token saved! Reloading map...');
+      // Force re-render
+      window.location.reload();
+    }
+  };
+
   const openInMaps = (location: Location) => {
     const { lat, lng } = location.coordinates;
-    const address = encodeURIComponent(location.address);
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+  };
 
-    // Try to open in device map app
-    if (navigator.userAgent.match(/iPhone|iPad|iPod/)) {
-      // iOS
-      window.location.href = `maps:///?daddr=${lat},${lng}&dirflg=d`;
-    } else if (navigator.userAgent.match(/Android/)) {
-      // Android
-      window.location.href = `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(location.name)})`;
-    } else {
-      // Fallback to Google Maps
-      window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${address}`, '_blank');
-    }
+  const getLocationTypeIcon = (type: Location['type']) => {
+    const icons: Record<Location['type'], string> = {
+      store: '🏪',
+      gallery: '🎨',
+      warehouse: '🏭',
+      office: '🏢',
+    };
+    return icons[type] || '📍';
   };
 
   const getLocationTypeColor = (type: Location['type']) => {
     switch (type) {
-      case 'store': return 'bg-green-100 text-green-800';
-      case 'gallery': return 'bg-purple-100 text-purple-800';
-      case 'warehouse': return 'bg-blue-100 text-blue-800';
-      case 'office': return 'bg-orange-100 text-orange-800';
+      case 'store': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+      case 'gallery': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300';
+      case 'warehouse': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
+      case 'office': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300';
       default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getLocationTypeIcon = (type: Location['type']) => {
-    switch (type) {
-      case 'store': return '🏪';
-      case 'gallery': return '🎨';
-      case 'warehouse': return '🏭';
-      case 'office': return '🏢';
-      default: return '📍';
     }
   };
 
@@ -182,6 +281,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ className }) => {
       const updatedLocations = [...locations, location];
       saveLocations(updatedLocations);
       setNewLocation({ type: 'store', isActive: true });
+      toast.success('Location added successfully!');
     }
   };
 
@@ -191,36 +291,60 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ className }) => {
     if (selectedLocation?.id === id) {
       setSelectedLocation(null);
     }
-  };
-
-  const toggleLocationStatus = (id: string) => {
-    const updatedLocations = locations.map(loc =>
-      loc.id === id ? { ...loc, isActive: !loc.isActive } : loc
-    );
-    saveLocations(updatedLocations);
+    toast.success('Location removed');
   };
 
   return (
     <Card className={className}>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="flex items-center gap-2">
             <MapPin className="h-5 w-5" />
             Find Our Locations
           </CardTitle>
-          {authState.isAuthenticated && authState.user?.role === 'admin' && (
+          <div className="flex gap-2">
             <Button
-              variant={isAdminMode ? "default" : "outline"}
+              variant="outline"
               size="sm"
-              onClick={() => setIsAdminMode(!isAdminMode)}
+              onClick={() => setShowTokenInput(!showTokenInput)}
             >
-              {isAdminMode ? 'Exit Admin' : 'Admin Mode'}
+              <Settings className="h-4 w-4 mr-1" />
+              {mapboxToken ? 'Update Token' : 'Add Mapbox Token'}
             </Button>
-          )}
+            {authState.isAuthenticated && authState.user?.role === 'admin' && (
+              <Button
+                variant={isAdminMode ? "default" : "outline"}
+                size="sm"
+                onClick={() => setIsAdminMode(!isAdminMode)}
+              >
+                {isAdminMode ? 'Exit Admin' : 'Admin Mode'}
+              </Button>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
+          {/* Token Input */}
+          {showTokenInput && (
+            <div className="p-4 bg-muted rounded-lg space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Enter your Mapbox public token to enable the interactive map. 
+                Get one free at <a href="https://mapbox.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">mapbox.com</a>
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  placeholder="pk.eyJ1Ij..."
+                  value={mapboxToken}
+                  onChange={(e) => setMapboxToken(e.target.value)}
+                  className="flex-1"
+                />
+                <Button onClick={handleSaveToken}>Save Token</Button>
+              </div>
+            </div>
+          )}
+
           {/* Admin Controls */}
           {isAdminMode && (
             <Card className="border-2 border-dashed">
@@ -234,9 +358,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ className }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">Location Name</label>
-                    <input
-                      type="text"
-                      className="w-full p-2 border rounded-md"
+                    <Input
                       placeholder="Enter location name"
                       value={newLocation.name || ''}
                       onChange={(e) => setNewLocation({...newLocation, name: e.target.value})}
@@ -245,7 +367,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ className }) => {
                   <div>
                     <label className="block text-sm font-medium mb-1">Type</label>
                     <select
-                      className="w-full p-2 border rounded-md"
+                      className="w-full p-2 border rounded-md bg-background"
                       value={newLocation.type || 'store'}
                       onChange={(e) => setNewLocation({...newLocation, type: e.target.value as Location['type']})}
                     >
@@ -257,9 +379,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ className }) => {
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium mb-1">Address</label>
-                    <input
-                      type="text"
-                      className="w-full p-2 border rounded-md"
+                    <Input
                       placeholder="Enter full address"
                       value={newLocation.address || ''}
                       onChange={(e) => setNewLocation({...newLocation, address: e.target.value})}
@@ -267,66 +387,34 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ className }) => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Latitude</label>
-                    <input
+                    <Input
                       type="number"
                       step="any"
-                      className="w-full p-2 border rounded-md"
                       placeholder="24.7136"
                       value={newLocation.coordinates?.lat || ''}
                       onChange={(e) => setNewLocation({
                         ...newLocation,
                         coordinates: {
-                          ...newLocation.coordinates,
-                          lat: parseFloat(e.target.value) || 0
-                        } as {lat: number, lng: number}
+                          lat: parseFloat(e.target.value) || 0,
+                          lng: newLocation.coordinates?.lng || 0
+                        }
                       })}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Longitude</label>
-                    <input
+                    <Input
                       type="number"
                       step="any"
-                      className="w-full p-2 border rounded-md"
                       placeholder="46.6753"
                       value={newLocation.coordinates?.lng || ''}
                       onChange={(e) => setNewLocation({
                         ...newLocation,
                         coordinates: {
-                          ...newLocation.coordinates,
+                          lat: newLocation.coordinates?.lat || 0,
                           lng: parseFloat(e.target.value) || 0
-                        } as {lat: number, lng: number}
+                        }
                       })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Phone</label>
-                    <input
-                      type="tel"
-                      className="w-full p-2 border rounded-md"
-                      placeholder="+966 50 123 4567"
-                      value={newLocation.phone || ''}
-                      onChange={(e) => setNewLocation({...newLocation, phone: e.target.value})}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Hours</label>
-                    <input
-                      type="text"
-                      className="w-full p-2 border rounded-md"
-                      placeholder="Mon-Fri: 9:00 AM - 10:00 PM"
-                      value={newLocation.hours || ''}
-                      onChange={(e) => setNewLocation({...newLocation, hours: e.target.value})}
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium mb-1">Description</label>
-                    <textarea
-                      className="w-full p-2 border rounded-md"
-                      rows={3}
-                      placeholder="Brief description of this location"
-                      value={newLocation.description || ''}
-                      onChange={(e) => setNewLocation({...newLocation, description: e.target.value})}
                     />
                   </div>
                 </div>
@@ -338,21 +426,50 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ className }) => {
             </Card>
           )}
 
+          {/* Map Container */}
+          <div className="relative rounded-lg overflow-hidden" style={{ height: '400px' }}>
+            {mapboxToken ? (
+              <div ref={mapContainer} className="absolute inset-0" />
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                <div className="text-center p-6">
+                  <MapPin className="h-16 w-16 mx-auto mb-4 text-primary" />
+                  <h3 className="text-xl font-semibold mb-2">Interactive Map</h3>
+                  <p className="text-muted-foreground mb-4">
+                    {locations.filter(loc => loc.isActive).length} locations across Saudi Arabia
+                  </p>
+                  <Button onClick={() => setShowTokenInput(true)}>
+                    Add Mapbox Token to Enable
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Locations List */}
-          <div className="grid gap-4">
+          <div className="grid gap-4 md:grid-cols-2">
             {locations.filter(loc => loc.isActive).map((location) => (
               <div
                 key={location.id}
                 className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
                   selectedLocation?.id === location.id ? 'border-primary bg-primary/5' : 'border-border'
                 }`}
-                onClick={() => setSelectedLocation(location)}
+                onClick={() => {
+                  setSelectedLocation(location);
+                  if (map.current) {
+                    map.current.flyTo({
+                      center: [location.coordinates.lng, location.coordinates.lat],
+                      zoom: 12,
+                      duration: 1500,
+                    });
+                  }
+                }}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-2xl">{getLocationTypeIcon(location.type)}</span>
-                      <h3 className="font-semibold text-lg">{location.name}</h3>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <span className="text-xl">{getLocationTypeIcon(location.type)}</span>
+                      <h3 className="font-semibold truncate">{location.name}</h3>
                       <Badge className={getLocationTypeColor(location.type)}>
                         {location.type}
                       </Badge>
@@ -366,14 +483,10 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ className }) => {
 
                     <div className="flex items-start gap-2 mb-2">
                       <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                      <span className="text-sm text-muted-foreground">{location.address}</span>
+                      <span className="text-sm text-muted-foreground line-clamp-1">{location.address}</span>
                     </div>
 
-                    {location.description && (
-                      <p className="text-sm text-muted-foreground mb-2">{location.description}</p>
-                    )}
-
-                    <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                    <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
                       {location.phone && (
                         <div className="flex items-center gap-1">
                           <Phone className="h-3 w-3" />
@@ -383,7 +496,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ className }) => {
                       {location.hours && (
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          <span>{location.hours}</span>
+                          <span className="truncate max-w-32">{location.hours}</span>
                         </div>
                       )}
                     </div>
@@ -402,28 +515,16 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ className }) => {
                     </Button>
 
                     {isAdminMode && (
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleLocationStatus(location.id);
-                          }}
-                        >
-                          {location.isActive ? 'Disable' : 'Enable'}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeLocation(location.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeLocation(location.id);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -431,56 +532,11 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ className }) => {
             ))}
           </div>
 
-          {/* Map Visualization Placeholder */}
-          <div className="bg-muted rounded-lg h-96 flex items-center justify-center relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-green-100 to-blue-100 opacity-50" />
-            <div className="relative z-10 text-center">
-              <MapPin className="h-16 w-16 mx-auto mb-4 text-primary" />
-              <h3 className="text-xl font-semibold mb-2">Interactive Map</h3>
-              <p className="text-muted-foreground mb-4">
-                {locations.filter(loc => loc.isActive).length} locations across Saudi Arabia
-              </p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {locations.filter(loc => loc.isActive).map((location) => (
-                  <button
-                    key={location.id}
-                    onClick={() => setSelectedLocation(location)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                      selectedLocation?.id === location.id
-                        ? 'bg-primary text-white'
-                        : 'bg-white text-primary border border-primary hover:bg-primary hover:text-white'
-                    }`}
-                  >
-                    {getLocationTypeIcon(location.type)} {location.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Simple map-like dots */}
-            <div className="absolute inset-0">
-              {locations.filter(loc => loc.isActive).map((location) => (
-                <div
-                  key={location.id}
-                  className={`absolute w-3 h-3 rounded-full border-2 border-white shadow-md cursor-pointer transition-all hover:scale-125 ${
-                    selectedLocation?.id === location.id
-                      ? 'bg-primary scale-125'
-                      : 'bg-primary/70 hover:bg-primary'
-                  }`}
-                  style={{
-                    left: `${((location.coordinates.lng - 39) / (51 - 39)) * 100}%`,
-                    top: `${((location.coordinates.lat - 16) / (32 - 16)) * 100}%`,
-                  }}
-                  onClick={() => setSelectedLocation(location)}
-                />
-              ))}
-            </div>
-          </div>
-
+          {/* Selected Location Details */}
           {selectedLocation && (
             <Card className="border-primary">
               <CardContent className="pt-6">
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                   <div>
                     <h4 className="font-semibold text-lg mb-2">{selectedLocation.name}</h4>
                     <p className="text-muted-foreground mb-3">{selectedLocation.address}</p>
@@ -488,7 +544,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({ className }) => {
                       <p className="text-sm mb-3">{selectedLocation.description}</p>
                     )}
                   </div>
-                  <Button onClick={() => openInMaps(selectedLocation)}>
+                  <Button onClick={() => openInMaps(selectedLocation)} className="shrink-0">
                     <Navigation className="h-4 w-4 mr-2" />
                     Get Directions
                   </Button>
