@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Star, Gift, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import apiService from '@/services/api';
+import { supabase } from '@/integrations/supabase/client';
 
 interface HighlightProduct {
   id: string;
@@ -34,21 +34,38 @@ const TopHighlights: React.FC = () => {
     try {
       setIsLoading(true);
       
-      // Get featured products
-      const featuredData = await apiService.getProducts({ 
-        is_featured: true, 
-        is_active: true, 
-        limit: 4 
-      });
+      // Use Supabase directly instead of backend API
+      const { data: featuredData, error: featuredError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('is_featured', true)
+        .eq('is_active', true)
+        .limit(4);
       
-      // Get products with discounts (original_price > price)
-      const promoData = await apiService.getProducts({ 
-        is_active: true, 
-        limit: 4 
-      });
+      const { data: promoData, error: promoError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('is_active', true)
+        .not('original_price', 'is', null)
+        .limit(4);
       
-      setFeaturedProducts((featuredData as { products: any[] }).products || []);
-      setPromoProducts((promoData as { products: any[] }).products?.filter(p => p.original_price && p.original_price > p.price) || []);
+      if (!featuredError && featuredData) {
+        setFeaturedProducts(featuredData.map(p => ({
+          ...p,
+          rating: p.rating || 0,
+          review_count: p.review_count || 0,
+          is_featured: p.is_featured || false,
+        })));
+      }
+      
+      if (!promoError && promoData) {
+        setPromoProducts(promoData.filter(p => p.original_price && p.original_price > p.price).map(p => ({
+          ...p,
+          rating: p.rating || 0,
+          review_count: p.review_count || 0,
+          is_featured: p.is_featured || false,
+        })));
+      }
     } catch (error) {
       console.error('Failed to load highlights:', error);
     } finally {

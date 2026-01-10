@@ -23,6 +23,7 @@ import {
   HeadphonesIcon
 } from 'lucide-react';
 import { toast } from 'sonner';
+import Navigation from '@/components/Navigation';
 import InteractiveMap from '@/components/InteractiveMap';
 
 interface ContactForm {
@@ -144,6 +145,7 @@ const ContactUs: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-sage/20 to-cream">
+      <Navigation />
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <div className="text-center mb-12">
