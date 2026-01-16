@@ -22,6 +22,8 @@ import { DeliveryScheduler, DeliverySchedule } from './DeliveryScheduler';
 import { SeasonalRecommendations } from './SeasonalRecommendations';
 import { BouquetPreviewThumbnail } from './BouquetPreviewThumbnail';
 import { BouquetShare } from './BouquetShare';
+import { Bouquet3DPreview } from './Bouquet3DPreview';
+import { FlowerTemplates, FlowerTemplate } from './FlowerTemplates';
 import { OCCASION_PRESETS } from './occasionPresets';
 import { useBouquetFlowers } from '@/hooks/useBouquetFlowers';
 import { useAuth } from '@/contexts/AuthContext';
@@ -30,9 +32,12 @@ import { useCurrency } from '@/contexts/CurrencyContext';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Save, RotateCcw, ShoppingCart, Undo, Redo, Grid, Flower2,
-  Ribbon, Package, Sparkles, Download
+  Ribbon, Package, Sparkles, Download, Box, Layout
 } from 'lucide-react';
 import { toast } from 'sonner';
+
+// View mode type for 2D/3D toggle
+type ViewMode = '2d' | '3d';
 
 interface HistoryState {
   items: CanvasFlower[];
@@ -68,6 +73,7 @@ export const ImprovedBouquetBuilder: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showGrid, setShowGrid] = useState(false);
+  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
 
   // Customization state
   const [wrapping, setWrapping] = useState<'paper' | 'cellophane' | 'burlap' | 'fabric'>('paper');
@@ -229,6 +235,52 @@ export const ImprovedBouquetBuilder: React.FC = () => {
     toast.success(`${preset.name} preset applied!`);
   }, [saveToHistory]);
 
+  // Apply flower template
+  const applyTemplate = useCallback((template: FlowerTemplate) => {
+    // Map template arrangements to actual flowers
+    const templateFlowers: CanvasFlower[] = template.arrangement.map((arr, index) => {
+      // Find matching flower from inventory
+      const flower = flowers.find(f => 
+        f.id === arr.flowerId || 
+        f.name.toLowerCase().includes(arr.flowerId.replace(/-/g, ' '))
+      );
+      
+      if (!flower) {
+        // Use a default flower if not found
+        return {
+          canvasId: `template-${arr.id}-${Date.now()}-${index}`,
+          id: arr.flowerId,
+          name: arr.flowerId.replace(/-/g, ' '),
+          image: '/placeholder.svg',
+          color: '#ff69b4',
+          price: template.basePrice / template.arrangement.length,
+          category: 'focal' as const,
+          size: 'medium' as const,
+          stock: 100,
+          x: arr.x,
+          y: arr.y,
+          rotation: arr.rotation,
+          scale: arr.scale,
+          zIndex: arr.zIndex,
+        };
+      }
+
+      return {
+        ...flower,
+        canvasId: `template-${arr.id}-${Date.now()}-${index}`,
+        x: arr.x,
+        y: arr.y,
+        rotation: arr.rotation,
+        scale: arr.scale,
+        zIndex: arr.zIndex,
+      };
+    });
+
+    setCanvasItems(templateFlowers);
+    saveToHistory(templateFlowers);
+    toast.success(`${template.name} template applied!`);
+  }, [flowers, saveToHistory]);
+
   // Load design from saved
   const loadDesign = useCallback((designData: any) => {
     if (designData?.items) {
@@ -371,6 +423,16 @@ export const ImprovedBouquetBuilder: React.FC = () => {
               >
                 <Grid className="w-4 h-4" />
               </Button>
+              <Button
+                variant={viewMode === '3d' ? "secondary" : "outline"}
+                size="sm"
+                onClick={() => setViewMode(viewMode === '2d' ? '3d' : '2d')}
+                className="h-8 sm:h-9"
+                title={viewMode === '2d' ? 'Switch to 3D view' : 'Switch to 2D view'}
+              >
+                {viewMode === '2d' ? <Box className="w-4 h-4 sm:mr-1" /> : <Layout className="w-4 h-4 sm:mr-1" />}
+                <span className="hidden sm:inline">{viewMode === '2d' ? '3D' : '2D'}</span>
+              </Button>
               <Button variant="outline" size="sm" onClick={clearBouquet} className="h-8 sm:h-9">
                 <RotateCcw className="w-4 h-4 sm:mr-1" />
                 <span className="hidden sm:inline">Clear</span>
@@ -451,19 +513,31 @@ export const ImprovedBouquetBuilder: React.FC = () => {
             <div className="lg:col-span-6 order-first lg:order-none space-y-4">
               <Card className="h-full">
                 <CardContent className="p-3 sm:p-6 flex items-center justify-center min-h-[350px] sm:min-h-[500px]">
-                  <VisualBouquetCanvas
-                    items={canvasItems}
-                    selectedItem={selectedItem}
-                    onItemSelect={setSelectedItem}
-                    onItemUpdate={updateItem}
-                    onItemRemove={removeItem}
-                    showGrid={showGrid}
-                    wrapping={wrapping}
-                    ribbonColor={ribbonColor}
-                    sizeScale={scaleMultiplier}
-                  />
+                  {viewMode === '2d' ? (
+                    <VisualBouquetCanvas
+                      items={canvasItems}
+                      selectedItem={selectedItem}
+                      onItemSelect={setSelectedItem}
+                      onItemUpdate={updateItem}
+                      onItemRemove={removeItem}
+                      showGrid={showGrid}
+                      wrapping={wrapping}
+                      ribbonColor={ribbonColor}
+                      sizeScale={scaleMultiplier}
+                    />
+                  ) : (
+                    <Bouquet3DPreview
+                      flowers={canvasItems}
+                      wrappingColor={WRAPPING_OPTIONS.find(w => w.id === wrapping)?.color || '#d4a574'}
+                      ribbonColor={ribbonColor}
+                      className="w-full h-full"
+                    />
+                  )}
                 </CardContent>
               </Card>
+              
+              {/* Flower Templates */}
+              <FlowerTemplates onSelectTemplate={applyTemplate} />
               
               {/* Preview Thumbnail - Mobile only */}
               <div className="block lg:hidden">

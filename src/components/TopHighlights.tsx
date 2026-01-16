@@ -11,12 +11,12 @@ interface HighlightProduct {
   name: string;
   name_ar?: string;
   price: number;
-  original_price?: number;
+  original_price?: number | null;
   image_url?: string;
-  images?: string[];
-  is_featured: boolean;
-  rating: number;
-  review_count: number;
+  images?: unknown;
+  is_featured: boolean | null;
+  rating: number | null;
+  review_count: number | null;
   category?: string;
 }
 
@@ -51,19 +51,29 @@ const TopHighlights: React.FC = () => {
       
       if (!featuredError && featuredData) {
         setFeaturedProducts(featuredData.map(p => ({
-          ...p,
-          rating: p.rating || 0,
-          review_count: p.review_count || 0,
-          is_featured: p.is_featured || false,
+          id: p.id,
+          name: p.name,
+          price: p.price,
+          original_price: p.original_price,
+          images: p.images,
+          is_featured: p.is_featured,
+          rating: p.rating,
+          review_count: p.review_count,
+          category: p.category,
         })));
       }
       
       if (!promoError && promoData) {
         setPromoProducts(promoData.filter(p => p.original_price && p.original_price > p.price).map(p => ({
-          ...p,
-          rating: p.rating || 0,
-          review_count: p.review_count || 0,
-          is_featured: p.is_featured || false,
+          id: p.id,
+          name: p.name,
+          price: p.price,
+          original_price: p.original_price,
+          images: p.images,
+          is_featured: p.is_featured,
+          rating: p.rating,
+          review_count: p.review_count,
+          category: p.category,
         })));
       }
     } catch (error) {
@@ -80,8 +90,10 @@ const TopHighlights: React.FC = () => {
 
   const getImageUrl = (product: HighlightProduct) => {
     if (product.image_url) return product.image_url;
-    if (product.images && product.images.length > 0) {
-      return Array.isArray(product.images) ? product.images[0] : product.images;
+    if (product.images) {
+      if (Array.isArray(product.images) && product.images.length > 0) {
+        return String(product.images[0]);
+      }
     }
     return '/placeholder.svg';
   };
