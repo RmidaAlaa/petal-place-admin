@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { X, RotateCcw, RotateCw, ZoomIn, ZoomOut, Move } from 'lucide-react';
 import { FlowerData } from './FlowerCard';
+import { getBouquetSlotForCanvas } from './bouquetLayout';
 
 export interface CanvasFlower extends FlowerData {
   canvasId: string;
@@ -248,14 +249,29 @@ export const VisualBouquetCanvas: React.FC<VisualBouquetCanvasProps> = ({
             />
           )}
 
-          {/* Empty state */}
+          {/* Bouquet puzzle guide slots */}
           {items.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center text-muted-foreground/60 px-8">
                 <Move className="w-10 h-10 mx-auto mb-3 opacity-40" />
                 <p className="text-lg font-medium">Your Bouquet</p>
-                <p className="text-sm mt-1">Drag flowers here to create your arrangement</p>
+                <p className="text-sm mt-1">Drag flowers here — they'll snap into a bouquet shape</p>
               </div>
+            </div>
+          )}
+
+          {/* Ghost guide circles showing where next flowers will land */}
+          {items.length > 0 && items.length < 19 && (
+            <div className="absolute inset-0 pointer-events-none">
+              {(() => {
+                const nextSlot = getBouquetSlotForCanvas(items.length);
+                return (
+                  <div
+                    className="absolute w-14 h-14 rounded-full border-2 border-dashed border-primary/20 animate-pulse"
+                    style={{ left: nextSlot.x - 4, top: nextSlot.y - 4 }}
+                  />
+                );
+              })()}
             </div>
           )}
 

@@ -26,6 +26,7 @@ import { Bouquet3DPreview } from './Bouquet3DPreview';
 import { FlowerTemplates, FlowerTemplate } from './FlowerTemplates';
 import { OCCASION_PRESETS } from './occasionPresets';
 import { useBouquetFlowers } from '@/hooks/useBouquetFlowers';
+import { getBouquetSlot } from './bouquetLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
@@ -161,20 +162,20 @@ export const ImprovedBouquetBuilder: React.FC = () => {
           return newItems;
         });
       } else {
-        // Adding new flower from inventory
+        // Adding new flower from inventory — bouquet puzzle placement
         const flower = flowers.find(f => f.id === active.id);
         if (flower && flower.stock > 0) {
-          const canvasCenter = { x: 120, y: 120 };
-          const offset = canvasItems.length * 15;
+          // Bouquet spiral layout: center first, then concentric rings
+          const bouquetSlots = getBouquetSlot(canvasItems.length);
           
           const newItem: CanvasFlower = {
             ...flower,
             canvasId: `${flower.id}-${Date.now()}`,
-            x: canvasCenter.x + (Math.random() - 0.5) * 80 + offset % 60,
-            y: canvasCenter.y + (Math.random() - 0.5) * 80 + offset % 40,
-            rotation: Math.random() * 30 - 15,
-            scale: 1,
-            zIndex: canvasItems.length,
+            x: bouquetSlots.x,
+            y: bouquetSlots.y,
+            rotation: bouquetSlots.rotation,
+            scale: bouquetSlots.scale,
+            zIndex: bouquetSlots.zIndex,
           };
           
           setCanvasItems(prev => {
