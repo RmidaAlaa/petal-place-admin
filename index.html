@@ -3,27 +3,76 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Roses Garden - حديقة الأزهار | Premium Flowers & Gifts</title>
-    <meta name="description" content="Roses Garden offers premium natural roses, gift arrangements, and special occasion flowers. Wedding bouquets, birthday surprises, and fresh flowers delivered." />
-    <meta name="author" content="FloralMarket" />
+    <title>Roses Garden | Premium Fresh Flowers & Bouquets</title>
+    <meta name="description" content="Roses Garden – Premium natural roses, custom bouquets, gift boxes & wedding flowers. Same-day delivery. Design your own bouquet with our 3D builder." />
+    <meta name="author" content="Roses Garden" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://roses-garden.lovable.app/" />
 
-    <meta property="og:title" content="FloralMarket - Fresh Flowers Delivered Daily" />
-    <meta property="og:description" content="Discover beautiful flower arrangements from local vendors. Fresh flowers delivered daily for every occasion." />
+    <!-- Open Graph -->
+    <meta property="og:title" content="Roses Garden | Premium Fresh Flowers & Bouquets" />
+    <meta property="og:description" content="Premium natural roses, custom bouquets, gift boxes & wedding flowers. Same-day delivery available." />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta property="og:url" content="https://roses-garden.lovable.app/" />
+    <meta property="og:site_name" content="Roses Garden" />
+    <meta property="og:image" content="/src/assets/hero-flowers.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="ar_SA" />
 
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta name="twitter:title" content="Roses Garden | Premium Fresh Flowers" />
+    <meta name="twitter:description" content="Premium natural roses, custom bouquets & gift boxes. Same-day delivery." />
+    <meta name="twitter:image" content="/src/assets/hero-flowers.jpg" />
 
     <!-- Favicon -->
     <link rel="icon" type="image/jpeg" href="/src/assets/roses-garden-logo.jpg" />
     <link rel="apple-touch-icon" href="/src/assets/roses-garden-logo.jpg" />
-    
+
     <!-- Preload critical resources -->
     <link rel="preload" as="image" href="/src/assets/hero-flowers.jpg" fetchpriority="high" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Theme color -->
+    <meta name="theme-color" content="#d6336c" />
+    <meta name="msapplication-TileColor" content="#d6336c" />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Florist",
+      "name": "Roses Garden",
+      "description": "Premium natural roses, custom bouquets, gift boxes & wedding flowers with same-day delivery.",
+      "url": "https://roses-garden.lovable.app",
+      "logo": "/src/assets/roses-garden-logo.jpg",
+      "sameAs": [],
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "SA"
+      },
+      "priceRange": "$$",
+      "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+        "opens": "09:00",
+        "closes": "21:00"
+      },
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Flower Arrangements",
+        "itemListElement": [
+          {"@type": "Offer", "itemOffered": {"@type": "Product", "name": "Natural Roses"}},
+          {"@type": "Offer", "itemOffered": {"@type": "Product", "name": "Custom Bouquets"}},
+          {"@type": "Offer", "itemOffered": {"@type": "Product", "name": "Gift Boxes"}},
+          {"@type": "Offer", "itemOffered": {"@type": "Product", "name": "Wedding Flowers"}}
+        ]
+      }
+    }
+    </script>
   </head>
 
   <body>

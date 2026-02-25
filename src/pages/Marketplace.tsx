@@ -6,7 +6,7 @@ import ProductCard from "@/components/ProductCard";
 import ProductFilters, { FilterOptions } from "@/components/ProductFilters";
 import TopHighlights from "@/components/TopHighlights";
 import GeolocationNotice from "@/components/GeolocationNotice";
-import AnimatedBackground from "@/components/AnimatedBackground";
+import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Heart, Sparkles, Gift, Flower, Home, Building, Baby, Mail, Phone } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -224,8 +224,7 @@ const Marketplace = () => {
   }, [featuredProducts, filters]);
 
   return (
-    <div className="min-h-screen bg-background relative">
-      <AnimatedBackground />
+    <div className="min-h-screen bg-background">
       <div className="relative z-10">
         <Navigation />
         <GeolocationNotice />
@@ -243,42 +242,36 @@ const Marketplace = () => {
             <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 hover:shadow-lg transition-all duration-300">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <Badge className="bg-red-500 text-white">50% OFF</Badge>
-                  <Heart className="h-5 w-5 text-red-500" />
+                  <Badge className="bg-destructive text-destructive-foreground">50% OFF</Badge>
+                  <Heart className="h-5 w-5 text-destructive" />
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Valentine's Day Special</h3>
                 <p className="text-muted-foreground mb-4">Red roses and romantic bouquets at half price</p>
-                <Button className="w-full bg-primary hover:bg-primary/90">
-                  Shop Valentine's Deals
-                </Button>
+                <Button className="w-full">Shop Valentine's Deals</Button>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-green-50 to-green-25 border-green-200 hover:shadow-lg transition-all duration-300">
+            <Card className="bg-gradient-to-br from-secondary/40 to-secondary/20 border-secondary hover:shadow-lg transition-all duration-300">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <Badge className="bg-green-500 text-white">Buy 2 Get 1 Free</Badge>
-                  <Gift className="h-5 w-5 text-green-500" />
+                  <Badge className="bg-sage text-sage-foreground">Buy 2 Get 1 Free</Badge>
+                  <Gift className="h-5 w-5 text-sage" />
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Mix & Match Bouquets</h3>
                 <p className="text-muted-foreground mb-4">Create your perfect combination with our bundle deals</p>
-                <Button variant="outline" className="w-full border-green-500 text-green-700 hover:bg-green-50">
-                  View Bundles
-                </Button>
+                <Button variant="outline" className="w-full">View Bundles</Button>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-purple-50 to-purple-25 border-purple-200 hover:shadow-lg transition-all duration-300">
+            <Card className="bg-gradient-to-br from-accent/10 to-accent/5 border-accent/20 hover:shadow-lg transition-all duration-300">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <Badge className="bg-purple-500 text-white">Free Delivery</Badge>
-                  <Flower className="h-5 w-5 text-purple-500" />
+                  <Badge className="bg-accent text-accent-foreground">Free Delivery</Badge>
+                  <Flower className="h-5 w-5 text-accent" />
                 </div>
                 <h3 className="text-lg font-semibold mb-2">New Customer Welcome</h3>
                 <p className="text-muted-foreground mb-4">Free delivery on your first order over {formatPrice(50)}</p>
-                <Button variant="outline" className="w-full border-purple-500 text-purple-700 hover:bg-purple-50">
-                  Sign Up Now
-                </Button>
+                <Button variant="outline" className="w-full">Sign Up Now</Button>
               </CardContent>
             </Card>
           </div>
@@ -298,35 +291,29 @@ const Marketplace = () => {
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Wedding Hall Floral Design</h3>
                 <p className="text-muted-foreground mb-4">Complete floral arrangements for your special day, from ceremony to reception</p>
-                <Button variant="outline" className="w-full">
-                  Learn More
-                </Button>
+                <Button variant="outline" className="w-full">Learn More</Button>
               </CardContent>
             </Card>
 
             <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group">
               <CardContent className="p-6 text-center">
-                <div className="w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-pink-200 transition-colors">
-                  <Baby className="h-8 w-8 text-pink-600" />
+                <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-accent/20 transition-colors">
+                  <Baby className="h-8 w-8 text-accent" />
                 </div>
                 <h3 className="text-lg font-semibold mb-2">New Baby Arrival Decoration</h3>
                 <p className="text-muted-foreground mb-4">Celebrate new life with beautiful floral decorations and gift arrangements</p>
-                <Button variant="outline" className="w-full">
-                  Learn More
-                </Button>
+                <Button variant="outline" className="w-full">Learn More</Button>
               </CardContent>
             </Card>
 
             <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group">
               <CardContent className="p-6 text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-200 transition-colors">
-                  <Building className="h-8 w-8 text-blue-600" />
+                <div className="w-16 h-16 bg-sage/20 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-sage/30 transition-colors">
+                  <Building className="h-8 w-8 text-sage" />
                 </div>
                 <h3 className="text-lg font-semibold mb-2">Work/Office Floral Design</h3>
                 <p className="text-muted-foreground mb-4">Professional floral arrangements to brighten up your workspace</p>
-                <Button variant="outline" className="w-full">
-                  Learn More
-                </Button>
+                <Button variant="outline" className="w-full">Learn More</Button>
               </CardContent>
             </Card>
           </div>
@@ -339,83 +326,28 @@ const Marketplace = () => {
             Product Trends
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            <Card 
-              className="hover:shadow-md transition-shadow cursor-pointer group"
-              onClick={() => setFilters(prev => ({ ...prev, search: 'Red Roses' }))}
-            >
-              <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-red-200 transition-colors">
-                  <Flower className="h-6 w-6 text-red-600" />
-                </div>
-                <h4 className="font-medium text-sm">Red Roses</h4>
-                <p className="text-xs text-muted-foreground">Trending</p>
-              </CardContent>
-            </Card>
-
-            <Card 
-              className="hover:shadow-md transition-shadow cursor-pointer group"
-              onClick={() => setFilters(prev => ({ ...prev, search: "Valentine's" }))}
-            >
-              <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-pink-200 transition-colors">
-                  <Heart className="h-6 w-6 text-pink-600" />
-                </div>
-                <h4 className="font-medium text-sm">Valentine's Gifts</h4>
-                <p className="text-xs text-muted-foreground">Popular</p>
-              </CardContent>
-            </Card>
-
-            <Card 
-              className="hover:shadow-md transition-shadow cursor-pointer group"
-              onClick={() => setFilters(prev => ({ ...prev, search: 'Gift Boxes' }))}
-            >
-              <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-purple-200 transition-colors">
-                  <Gift className="h-6 w-6 text-purple-600" />
-                </div>
-                <h4 className="font-medium text-sm">Gift Boxes</h4>
-                <p className="text-xs text-muted-foreground">Best Seller</p>
-              </CardContent>
-            </Card>
-
-            <Card 
-              className="hover:shadow-md transition-shadow cursor-pointer group"
-              onClick={() => setFilters(prev => ({ ...prev, search: 'Sunflowers' }))}
-            >
-              <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-yellow-200 transition-colors">
-                  <Flower className="h-6 w-6 text-yellow-600" />
-                </div>
-                <h4 className="font-medium text-sm">Sunflowers</h4>
-                <p className="text-xs text-muted-foreground">Seasonal</p>
-              </CardContent>
-            </Card>
-
-            <Card 
-              className="hover:shadow-md transition-shadow cursor-pointer group"
-              onClick={() => setFilters(prev => ({ ...prev, search: 'Mixed' }))}
-            >
-              <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-green-200 transition-colors">
-                  <Flower className="h-6 w-6 text-green-600" />
-                </div>
-                <h4 className="font-medium text-sm">Mixed Bouquets</h4>
-                <p className="text-xs text-muted-foreground">Trending</p>
-              </CardContent>
-            </Card>
-
-            <Card 
-              className="hover:shadow-md transition-shadow cursor-pointer group"
-              onClick={() => setFilters(prev => ({ ...prev, search: 'Hydrangeas' }))}
-            >
-              <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-blue-200 transition-colors">
-                  <Flower className="h-6 w-6 text-blue-600" />
-                </div>
-                <h4 className="font-medium text-sm">Blue Hydrangeas</h4>
-                <p className="text-xs text-muted-foreground">New</p>
-              </CardContent>
-            </Card>
+            {[
+              { label: 'Red Roses', search: 'Red Roses', tag: 'Trending', icon: Flower },
+              { label: "Valentine's Gifts", search: "Valentine's", tag: 'Popular', icon: Heart },
+              { label: 'Gift Boxes', search: 'Gift Boxes', tag: 'Best Seller', icon: Gift },
+              { label: 'Sunflowers', search: 'Sunflowers', tag: 'Seasonal', icon: Flower },
+              { label: 'Mixed Bouquets', search: 'Mixed', tag: 'Trending', icon: Flower },
+              { label: 'Blue Hydrangeas', search: 'Hydrangeas', tag: 'New', icon: Flower },
+            ].map((item) => (
+              <Card
+                key={item.label}
+                className="hover:shadow-md transition-shadow cursor-pointer group"
+                onClick={() => setFilters(prev => ({ ...prev, search: item.search }))}
+              >
+                <CardContent className="p-4 text-center">
+                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-primary/20 transition-colors">
+                    <item.icon className="h-6 w-6 text-primary" />
+                  </div>
+                  <h4 className="font-medium text-sm">{item.label}</h4>
+                  <p className="text-xs text-muted-foreground">{item.tag}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </section>
 
@@ -473,7 +405,7 @@ const Marketplace = () => {
                         <p className="text-sm text-muted-foreground">{partner.name_ar}</p>
                       </div>
                     </div>
-                    <Badge variant="secondary" className="bg-green-100 text-green-800">
+                    <Badge variant="secondary">
                       Active
                     </Badge>
                   </div>
@@ -627,6 +559,7 @@ const Marketplace = () => {
           </Button>
         </div>
       </main>
+      <Footer />
       </div>
     </div>
   );

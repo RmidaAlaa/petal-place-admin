@@ -257,8 +257,8 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ children }) => {
             <div className="flex-shrink-0 p-4 sm:p-6 border-t">
               <div className="space-y-3">
                 {appliedCoupon ? (
-                  <div className="flex items-center justify-between p-2 rounded-lg bg-green-50 dark:bg-green-950/30">
-                    <div className="flex items-center gap-2 text-green-600">
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-secondary">
+                    <div className="flex items-center gap-2 text-secondary-foreground">
                       <CheckCircle className="h-4 w-4" />
                       <span className="text-sm font-medium">Coupon applied: {appliedCoupon}</span>
                     </div>
@@ -266,7 +266,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ children }) => {
                       variant="ghost"
                       size="icon"
                       onClick={() => setAppliedCoupon(null)}
-                      className="h-7 w-7 rounded-full hover:bg-green-100 dark:hover:bg-green-900/30"
+                      className="h-7 w-7 rounded-full hover:bg-muted"
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -314,7 +314,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ children }) => {
                   <span className="text-muted-foreground">Shipping</span>
                   <span>
                     {(state.summary?.shipping || 0) === 0 ? (
-                      <span className="text-green-600">Free</span>
+                      <span className="text-primary font-medium">Free</span>
                     ) : (
                       formatPrice(state.summary?.shipping || 0)
                     )}
@@ -325,7 +325,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ children }) => {
                   <span>{formatPrice(state.summary?.tax || 0)}</span>
                 </div>
                 {state.summary?.discount && state.summary.discount > 0 && (
-                  <div className="flex justify-between items-center text-green-600">
+                  <div className="flex justify-between items-center text-primary">
                     <span>Discount</span>
                     <span>-{formatPrice(state.summary.discount)}</span>
                   </div>
@@ -345,7 +345,7 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ children }) => {
                 <Button 
                   onClick={handleCheckout} 
                   size="lg"
-                  className="w-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white shadow-md"
+                  className="w-full shadow-md"
                 >
                   Proceed to Checkout
                   <ArrowRight className="h-4 w-4 ml-2" />
@@ -366,11 +366,11 @@ const CartSidebar: React.FC<CartSidebarProps> = ({ children }) => {
               {/* Security Badges */}
               <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm text-muted-foreground pt-2">
                 <div className="flex items-center justify-center gap-1.5 p-2 rounded-lg bg-muted/50">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
                   <span>Secure Checkout</span>
                 </div>
                 <div className="flex items-center justify-center gap-1.5 p-2 rounded-lg bg-muted/50">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <div className="w-2 h-2 bg-accent rounded-full"></div>
                   <span>Free Returns</span>
                 </div>
               </div>

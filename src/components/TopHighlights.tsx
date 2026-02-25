@@ -111,7 +111,7 @@ const TopHighlights: React.FC = () => {
     );
   }
 
-  const allHighlights = [...featuredProducts, ...promoProducts].slice(0, 8);
+  const allHighlights = [...featuredProducts, ...promoProducts.filter(p => !featuredProducts.some(f => f.id === p.id))].slice(0, 8);
 
   if (allHighlights.length === 0) {
     return null;
@@ -197,9 +197,9 @@ const TopHighlights: React.FC = () => {
                             )}
                           </div>
                           
-                          {product.rating > 0 && (
+                          {product.rating && product.rating > 0 && (
                             <div className="flex items-center space-x-1">
-                              <Star className="h-3 w-3 text-yellow-500 fill-current" />
+                              <Star className="h-3 w-3 text-primary fill-current" />
                               <span className="text-xs text-muted-foreground">
                                 {product.rating.toFixed(1)} ({product.review_count})
                               </span>
@@ -223,11 +223,11 @@ const TopHighlights: React.FC = () => {
               <span>Special Gifts Available</span>
             </div>
             <div className="flex items-center space-x-1">
-              <Star className="h-4 w-4 text-yellow-500" />
+              <Star className="h-4 w-4 text-primary" />
               <span>Premium Quality</span>
             </div>
             <div className="flex items-center space-x-1">
-              <TrendingUp className="h-4 w-4 text-green-500" />
+              <TrendingUp className="h-4 w-4 text-sage" />
               <span>Best Sellers</span>
             </div>
           </div>
