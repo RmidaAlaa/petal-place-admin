@@ -100,6 +100,7 @@ export const RelatedProductsSection: React.FC<RelatedProductsSectionProps> = ({ 
       name: product.name,
       price: product.price,
       image: product.image,
+      type: 'product',
     });
     toast.success(`${product.name} added to cart!`);
   };

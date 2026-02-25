@@ -393,15 +393,23 @@ export const ImprovedBouquetBuilder: React.FC = () => {
   const activeFlower = activeId ? flowers.find(f => f.id === activeId) : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/10 px-3 py-4 md:px-6 md:py-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
-            <Flower2 className="w-7 h-7 text-primary" />
-            Bouquet Builder
-          </h1>
-          <p className="text-muted-foreground mt-1">Create your perfect custom bouquet</p>
+        <div className="mb-5 md:mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Flower2 className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-xl md:text-2xl lg:text-3xl font-bold tracking-tight">
+                Bouquet Builder
+              </h1>
+              <p className="text-xs md:text-sm text-muted-foreground">
+                Design your perfect arrangement in 2D or immersive 3D
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Toolbar */}
@@ -511,7 +519,7 @@ export const ImprovedBouquetBuilder: React.FC = () => {
 
             {/* Center - Canvas */}
             <div className="lg:col-span-6 order-first lg:order-none space-y-4">
-              <Card className="h-full">
+              <Card className="h-full border-0 shadow-lg bg-card/80 backdrop-blur-sm">
                 <CardContent className="p-3 sm:p-6 flex items-center justify-center min-h-[350px] sm:min-h-[500px]">
                   {viewMode === '2d' ? (
                     <VisualBouquetCanvas
