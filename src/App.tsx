@@ -30,6 +30,7 @@ import Success from "./pages/Success";
 import ImportProducts from "./pages/ImportProducts";
 import Login from "./pages/Login";
 import ContactUs from "./pages/ContactUs";
+import ImpactDetails from "./pages/ImpactDetails";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -75,6 +76,7 @@ const App = () => (
                               <Route path="/gift-boxes" element={<GiftBoxes />} />
                               <Route path="/partners" element={<Partners />} />
                               <Route path="/contact" element={<ContactUs />} />
+                              <Route path="/impact" element={<ImpactDetails />} />
                               <Route path="/success" element={<Success />} />
                               <Route path="/admin" element={
                                 <ProtectedRoute requiredRole="admin">
