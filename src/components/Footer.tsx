@@ -16,6 +16,8 @@ import {
   Shield,
   Truck,
   RotateCcw,
+  MessageCircle,
+  Youtube,
 } from 'lucide-react';
 
 const Footer: React.FC = () => {
@@ -61,25 +63,49 @@ const Footer: React.FC = () => {
             </p>
             <div className="flex gap-3">
               <a
-                href="#"
+                href="https://facebook.com/rosesgarden"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-8 h-8 rounded-full bg-background/10 hover:bg-primary/80 flex items-center justify-center transition-colors"
                 aria-label="Facebook"
               >
                 <Facebook className="w-4 h-4" />
               </a>
               <a
-                href="#"
+                href="https://instagram.com/rosesgarden"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-8 h-8 rounded-full bg-background/10 hover:bg-primary/80 flex items-center justify-center transition-colors"
                 aria-label="Instagram"
               >
                 <Instagram className="w-4 h-4" />
               </a>
               <a
-                href="#"
+                href="https://twitter.com/rosesgarden"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-8 h-8 rounded-full bg-background/10 hover:bg-primary/80 flex items-center justify-center transition-colors"
                 aria-label="Twitter"
               >
                 <Twitter className="w-4 h-4" />
+              </a>
+              <a
+                href="https://wa.me/966501234567"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-full bg-background/10 hover:bg-[hsl(142,70%,40%)]/80 flex items-center justify-center transition-colors"
+                aria-label="WhatsApp"
+              >
+                <MessageCircle className="w-4 h-4" />
+              </a>
+              <a
+                href="https://youtube.com/@rosesgarden"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-full bg-background/10 hover:bg-primary/80 flex items-center justify-center transition-colors"
+                aria-label="YouTube"
+              >
+                <Youtube className="w-4 h-4" />
               </a>
             </div>
           </div>

@@ -32,6 +32,7 @@ import Login from "./pages/Login";
 import ContactUs from "./pages/ContactUs";
 import ImpactDetails from "./pages/ImpactDetails";
 import ProtectedRoute from "./components/ProtectedRoute";
+import WhatsAppWidget from "./components/WhatsAppWidget";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,7 @@ const App = () => (
                           <Toaster />
                           <Sonner />
                           <BrowserRouter>
+                            <WhatsAppWidget />
                             <Routes>
                               <Route path="/" element={<Marketplace />} />
                               <Route path="/search" element={<SearchResults />} />
