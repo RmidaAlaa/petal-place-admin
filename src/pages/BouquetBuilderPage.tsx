@@ -4,9 +4,11 @@ import { ImprovedBouquetBuilder } from '@/components/bouquet-builder/ImprovedBou
 
 const BouquetBuilderPage: React.FC = () => {
   return (
-    <div>
+    <div className="min-h-screen bg-background">
       <Navigation />
-      <ImprovedBouquetBuilder />
+      <main>
+        <ImprovedBouquetBuilder />
+      </main>
     </div>
   );
 };
